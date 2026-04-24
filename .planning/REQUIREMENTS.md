@@ -14,7 +14,8 @@
 - [ ] **FACT-03**: Il sistema crea un nuovo repository GitHub dal template Astro per ogni progetto, senza sleep-hack (retry loop su GitHub API)
 - [ ] **FACT-04**: Il sistema deploya il sito su un nuovo progetto Cloudflare Pages collegato al repository GitHub dedicato
 - [ ] **FACT-05**: Il sistema inietta la config del sito (nicchia, città, zone, avatar, factory API URL) nel repo al momento del deploy
-- [ ] **FACT-06**: Tutti gli endpoint factory-core non-pubblici richiedono autenticazione Bearer token
+- [x] **FACT-06
+**: Tutti gli endpoint factory-core non-pubblici richiedono autenticazione Bearer token
 
 ### Siti Deployati
 

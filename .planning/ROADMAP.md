@@ -33,7 +33,12 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
   3. AI calls in factory-core use `gemini-2.5-flash` and receive a valid JSON response from Cloudflare AI Gateway
   4. The `leads` D1 table has an `email` column and migrations apply cleanly
   5. `VERIFICATION_BASE_URL` in wrangler.toml is set to the production Worker URL, not localhost
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Schema D1 email: aggiungere colonna email a schema.ts + db.insert in entrambi i factory-core
+- [ ] 01-02-PLAN.md — Auth + env config: bearerAuth middleware su endpoint protetti + VERIFICATION_BASE_URL produzione
+- [ ] 01-03-PLAN.md — [BLOCKING] Applicare migration D1 locale + verifica end-to-end tutti i criteri Fase 1
 
 ### Phase 2: Astro Template Completion
 **Goal**: The Astro rank-rent site template has complete routing (all page types), structured data markup, auto-generated sitemap + robots.txt, and fetches all content from factory-core D1 at build time with zero Directus dependency
@@ -141,7 +146,7 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Factory-Core Foundation | 0/TBD | Not started | - |
+| 1. Factory-Core Foundation | 0/3 | Not started | - |
 | 2. Astro Template Completion | 0/TBD | Not started | - |
 | 3. AI Content Generation | 0/TBD | Not started | - |
 | 4. Deploy Pipeline | 0/TBD | Not started | - |
