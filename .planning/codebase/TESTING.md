@@ -5,173 +5,141 @@
 ## Test Framework
 
 **Runner:**
-- Not detected: No test framework configured (no Jest, Vitest, or other test runners)
-- No test configuration files found (`jest.config.ts`, `vitest.config.ts`, etc.)
-- No test dependencies in `package.json`
+- Not configured — no test runner is present in this project
 
 **Assertion Library:**
-- Not applicable (no testing framework)
+- Not configured
+
+**Config files:**
+- No `jest.config.*`, `vitest.config.*`, or any test runner config found
 
 **Run Commands:**
 ```bash
-npm run lint              # TypeScript type checking (tsc --noEmit)
-npm run build             # Vite build
-npm run dev               # Development server with tsx
-npm run preview           # Preview build output
+# No test script defined in package.json
+# "scripts" contains only: dev, build, preview, clean, lint
 ```
 
-**Current Testing Status:**
-- No automated tests implemented
-- Code relies on TypeScript type checking as primary safety mechanism
-- Manual testing required via development server
+## Current State
 
-## Test File Organization
+No tests exist in this codebase. The `src/` directory contains zero `.test.*` or `.spec.*` files. The only test files found in the repository are inside `factory-core/node_modules/` (third-party dependency test files — not project tests).
 
-**Location:**
-- Not applicable; no test files exist in codebase
-- No dedicated `__tests__` or `tests/` directories found
+## What Exists Instead of Tests
 
-**Naming:**
-- Not applicable; no test naming convention established
+**Type checking** serves as the sole automated code quality gate:
+```bash
+npm run lint   # runs: tsc --noEmit
+```
+This catches TypeScript type errors but does not verify runtime behavior.
 
-**Structure:**
-- Not applicable
+## Test Coverage Gaps
 
-## Test Structure
+**All application logic is untested.** Key risk areas:
 
-**Suite Organization:**
-- Not established; no test suites present
+**`src/services/gemini.ts`:**
+- `generatePplPlan` — parses freeform Gemini JSON; fragile if model output format changes
+- `researchNiche`, `analyzeCloudflareSite`, `generateSiteContent` — all `JSON.parse` without validation
+- No schema validation after parse; callers receive `any`
 
-**Patterns:**
-- No setup/teardown patterns implemented
-- No assertion patterns defined
+**`src/services/geminiScout.ts`:**
+- `parseSafeJson` — fallback regex extraction; untested edge cases
+- `estimateCpc`, `analyzeDemand`, `analyzeCompetition` — chained multi-step pipeline with no unit tests at any stage
+- `analyzeCompetition` uses a different model (`gemini-3.1-pro-preview`) than the others — model mismatch untested
 
-## Mocking
+**`src/lib/firebase.ts`:**
+- `handleFirestoreError` — error serialisation logic untested
+- `testConnection()` called at module load time with no test isolation
 
-**Framework:**
-- Not applicable (no testing framework)
+**`src/App.tsx`:**
+- `handleAnalyzeIntelligence` — async event handler with Firestore write; untested
+- `handleImportCloudflare` — fetch + AI analysis + Firestore write chain; untested
 
-**Patterns:**
-- Manual mocking through dependency injection is feasible but not currently used
-- API mocking would need to be handled via fetch mocking libraries
+**`server.ts`:**
+- `/api/google/setup-asset` — JWT auth + GSC + GA4 API calls; untested
+- `/api/scrape-site` — CORS proxy endpoint; untested
+- No integration tests for any Express routes
 
-**What to Mock:**
-- Not yet established
+## Recommended Testing Approach (if tests are added)
 
-**What NOT to Mock:**
-- Not yet established
+**Framework recommendation:**
+- Vitest — compatible with Vite's ESM setup and `vite.config.ts`; no additional bundler config needed
 
-## Fixtures and Factories
+**Install:**
+```bash
+npm install -D vitest @vitest/ui happy-dom
+```
 
-**Test Data:**
-- Not applicable; no test fixtures exist
-- Example data exists in source: `geotargets.json` imported in `MassScout.tsx` for city data
-- Mock/placeholder data hardcoded in UI (e.g., KPI values in dashboard component)
+**Config (add to `vite.config.ts` or separate `vitest.config.ts`):**
+```typescript
+import { defineConfig } from 'vitest/config';
+export default defineConfig({
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+  },
+});
+```
 
-**Location:**
-- Data files: `src/geotargets.json`
-- Configuration: `firebase-applet-config.json` (not in repo; environment-sourced)
+**Recommended test file locations:**
+- Co-locate with source: `src/services/gemini.test.ts`, `src/lib/firebase.test.ts`
+- Or separate: `src/__tests__/`
 
-## Coverage
+**Priority test targets (highest risk → lowest):**
 
-**Requirements:**
-- Not enforced; no coverage thresholds configured
+1. `parseSafeJson` in `src/services/geminiScout.ts` — pure function, easy to unit test:
+```typescript
+// Example pattern
+import { describe, it, expect } from 'vitest';
+// parseSafeJson needs to be exported first
+describe('parseSafeJson', () => {
+  it('strips markdown code fences and parses JSON', () => {
+    const input = '```json\n{"key": "value"}\n```';
+    expect(parseSafeJson(input)).toEqual({ key: 'value' });
+  });
+  it('falls back to regex extraction on malformed JSON', () => {
+    const input = 'Some text {"key": "value"} more text';
+    expect(parseSafeJson(input)).toEqual({ key: 'value' });
+  });
+});
+```
 
-**View Coverage:**
-- Not applicable (no test runner configured)
+2. `handleFirestoreError` in `src/lib/firebase.ts` — pure error-transform logic, easy to isolate
+
+3. Express route handlers in `server.ts` — use `supertest` for HTTP-level integration tests
+
+**Mocking approach (for Gemini API calls):**
+```typescript
+import { vi } from 'vitest';
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: vi.fn(() => ({
+    models: {
+      generateContent: vi.fn().mockResolvedValue({ text: '{"services": ["idraulico"]}' }),
+    },
+  })),
+}));
+```
+
+**Mocking approach (for Firebase):**
+```typescript
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  addDoc: vi.fn().mockResolvedValue({ id: 'test-id' }),
+  collection: vi.fn(),
+}));
+```
 
 ## Test Types
 
 **Unit Tests:**
-- Not implemented
-- Candidates for testing: 
-  - `src/services/gemini.ts` functions (API response parsing, prompt generation)
-  - `src/services/geminiScout.ts` functions (JSON parsing, data transformation)
-  - `src/lib/firebase.ts` error handling functions
+- Not present. Recommended for: service functions in `src/services/`, utility helpers (`parseSafeJson`, `handleFirestoreError`, `cn`)
 
 **Integration Tests:**
-- Not implemented
-- Candidates:
-  - Firebase authentication flow
-  - Gemini API integration with response handling
-  - Firestore CRUD operations
+- Not present. Recommended for: Express API routes in `server.ts`
 
 **E2E Tests:**
-- Not implemented
-- Would benefit from testing:
-  - User login flow
-  - Analysis workflow (Intelligence tab → results display)
-  - Site import from Cloudflare
-  - Lead management operations
+- Not used. No Playwright, Cypress, or similar configured.
 
-## Common Patterns
-
-**Async Testing:**
-- Not yet established (no test framework)
-- Current pattern in components: async handlers wrapped in try-catch blocks
-
-Example from `App.tsx`:
-```typescript
-const handleAnalyzeIntelligence = async () => {
-  if (!niche || !city) return;
-  setIsAnalyzing(true);
-  setPplPlan(null);
-  try {
-    const plan = await generatePplPlan(niche, city);
-    setPplPlan(plan);
-    await addDoc(collection(db, 'opportunities'), {
-      niche,
-      city,
-      plan,
-      createdAt: serverTimestamp(),
-    });
-  } catch (e) {
-    console.error(e);
-    alert('Errore durante l\'analisi. Verifica la API Key e riprova.');
-  }
-  setIsAnalyzing(false);
-};
-```
-
-**Error Testing:**
-- No error testing framework in place
-- Current pattern: console.error logging and user alert feedback
-- Example from `firebase.ts`:
-```typescript
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
-```
-
-## Testing Recommendations
-
-**Immediate Needs:**
-1. Add Vitest or Jest for unit testing async service functions
-2. Configure React Testing Library for component tests
-3. Add test files co-located with source or in `src/__tests__` directory
-4. Set up CI/CD to run tests on pull requests
-
-**High-Priority Test Areas:**
-1. **`src/services/gemini.ts`** - JSON parsing and prompt generation
-   - Test safe JSON parsing with various response formats
-   - Validate prompt construction with different input parameters
-2. **`src/services/geminiScout.ts`** - API response handling and data transformation
-   - Test schema-compliant responses
-   - Test fallback handling for missing fields
-3. **`src/lib/firebase.ts`** - Error handling and auth flows
-   - Test permission-denied error handling
-   - Test auth state changes
-
-**Component Testing:**
-- `MassScout.tsx` - Test city selection, analysis workflow state transitions
-- `App.tsx` - Test tab navigation, authentication state, data loading
+**Component Tests:**
+- Not present. React component testing would require `@testing-library/react` with Vitest
 
 ---
 

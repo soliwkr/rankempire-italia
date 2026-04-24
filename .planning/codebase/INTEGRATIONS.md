@@ -4,195 +4,154 @@
 
 ## APIs & External Services
 
-**Google Cloud APIs:**
-- Google Generative AI (Gemini) - AI-powered research and content generation
-  - SDK/Client: `@google/genai` 1.29.0
-  - Auth: `GEMINI_API_KEY` environment variable
-  - Model: `gemini-3-flash-preview`
-  - Features: Grounded web search integration, JSON schema validation
+**AI / Generative:**
+- Google Gemini AI (via `@google/genai` SDK) - Market intelligence, niche research, site content generation, PPL plan generation
+  - SDK/Client: `@google/genai` in `src/services/gemini.ts`, `src/services/geminiScout.ts`
+  - Auth: `GEMINI_API_KEY` env var
+  - Models used: `gemini-3-flash-preview`, `gemini-3.1-pro-preview`
+  - Tools enabled: `googleSearch` (grounded results)
 
-- Google Search Console - Domain verification and indexing monitoring
-  - SDK/Client: `googleapis` 171.4.0 with `google.webmasters` client
-  - Auth: Google Service Account JWT (via `google-auth-library`)
+- Cloudflare AI Gateway (proxied Gemini 2.5 Flash) - AI content generation for factory-core edge worker
+  - Client: native `fetch` in `factory-core/src/services/ai.ts`
+  - Endpoint: `https://gateway.ai.cloudflare.com/v1/{accountId}/{gatewayName}/google-ai-studio/v1beta/models/gemini-2.5-flash:generateContent`
+  - Auth: `GOOGLE_AI_API_KEY` (x-goog-api-key header), optional `CF_AI_GATEWAY_TOKEN` (Bearer)
+  - Config: `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`, `CF_AI_GATEWAY_TOKEN` (Wrangler secrets)
+
+- Google Vertex AI - AI integration for client-mgc-reparation sub-project
+  - SDK/Client: `@google-cloud/vertexai` in `client-mgc-reparation/`
+  - Auth: `GEMINI_API_KEY`
+
+**Email:**
+- Resend - Transactional email (double opt-in verification emails, Italian language)
+  - Client: native `fetch` to `https://api.resend.com/emails` in `factory-core/src/services/email.ts`
+  - Auth: `RESEND_API_KEY` (Wrangler secret)
+  - Sender: configured via `EMAIL_FROM` env var (`Rankame <noreply@rankame.com>`)
+
+**Source Control / CI:**
+- GitHub API - Programmatic repository creation from templates for rank-and-rent site factory
+  - Client: native `fetch` in `factory-core/src/services/github.ts`
+  - Operations: `POST /repos/{owner}/{repo}/generate` (template fork), `PUT /repos/{owner}/{repo}/contents/{path}` (file creation)
+  - Auth: `GITHUB_TOKEN` (Bearer, Wrangler secret)
+
+**Analytics & Marketing:**
+- Google Tag Manager - Conversion tracking for client-mgc-reparation
+  - Container ID: `GTM-N7LN5XBL` (hardcoded in `client-mgc-reparation/constants.ts`)
+  - Events: `generate_lead_contact`, `generate_lead_wizard`, `click_to_call`, `view_landing_page`, `generate_lead`
+
+- Google Search Console - Automated site registration for new rank-and-rent properties
+  - Client: `googleapis` (`webmasters v3`) in `server.ts`
+  - Auth: Google service account JWT (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`)
   - Scope: `https://www.googleapis.com/auth/webmasters`
-  - Endpoint: `/api/google/setup-asset` (POST) in `server.ts`
 
-- Google Analytics 4 - Site performance tracking
-  - SDK/Client: `googleapis` 171.4.0 with `google.analyticsadmin` client
-  - Auth: Google Service Account JWT
+- Google Analytics 4 Admin - Automated GA4 property + web data stream creation
+  - Client: `googleapis` (`analyticsadmin v1beta`) in `server.ts`
+  - Auth: Google service account JWT (shared with GSC)
   - Scope: `https://www.googleapis.com/auth/analytics.edit`
-  - Operations: Create properties, data streams, configure measurement
-  - Endpoint: `/api/google/setup-asset` (POST) in `server.ts`
+  - Config: `GOOGLE_ANALYTICS_ACCOUNT_ID`
 
-**Google Business Services:**
-- Google Drive - Proof package PDF storage (planned via `/api/proof/generate`)
-- Google Workspace/Drive Admin - Content management
+**Communications:**
+- Meta WhatsApp Business API - Planned integration (env vars present, not yet implemented in source)
+  - Auth: `META_WA_CLIENT_ID`, `META_WA_ACCESS_TOKEN`
 
-**AI & Content Generation:**
-- Gemini API integration points in codebase:
-  - `src/services/gemini.ts` - Core AI operations:
-    - `generatePplPlan()` - PPL (Pay Per Lead) strategy with competitor analysis
-    - `researchNiche()` - Italian niche opportunity research
-    - `analyzeCloudflareSite()` - HTML content analysis for lead value
-    - `generateSiteContent()` - Italian-optimized site copy generation
-  - `src/services/geminiScout.ts` - Mass opportunity scouting
-  - Uses Google Search tool for grounded analysis (not simulated data)
+- VoIP / Cloud Communications (Vonage / MessageBird / OpenVOIP) - Planned integration
+  - Auth: `VOIP_API_KEY`, `VOIP_API_SECRET`
 
-**Meta (WhatsApp Business API):**
-- WhatsApp messaging integration (configured but not yet implemented)
-  - Auth: `META_WA_CLIENT_ID` and `META_WA_ACCESS_TOKEN` env vars
-  - Use case: Lead communication (planned feature)
+**Deployment:**
+- Cloudflare Pages Deploy Hook - Triggers site deployment (stub endpoint in `server.ts` at `POST /api/deploy/cloudflare`)
+  - Auth: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
 
 ## Data Storage
 
 **Databases:**
-- Firebase Firestore - Primary document database
-  - Connection: `firebase` 12.12.1 SDK
+- Firebase Firestore - Primary real-time database for root app (opportunities, sites, leads)
+  - Project: `soliwkr` (Firebase project ID from `firebase-applet-config.json`)
   - Database ID: `ai-studio-54d0ce8d-6c36-4138-a9c7-40f9cb6e1d96`
-  - Project ID: `soliwkr`
-  - Auth: Google OAuth via Firebase Auth
-  - Client initialization: `src/lib/firebase.ts`
+  - Client: `firebase/firestore` SDK in `src/lib/firebase.ts`
+  - Collections: `opportunities`, `sites`, `leads`
+  - Rules: `firestore.rules` (auth-gated; leads allow public create)
 
-**Firestore Collections & Schema:**
-- `opportunities` - AI-researched niche opportunities
-  - Fields: `niche`, `city`, `keywords`, `difficulty`, `searchVolume`, `estRevenue`, `aiAnalysis`, `createdAt`
-  - Access rules: Signed-in users can read/create/update/delete
+- Cloudflare D1 (SQLite) - Relational database for factory-core edge worker
+  - Database name: `factory-db`; local binding: `local-db`
+  - Schema: `factory-core/src/db/schema.ts` (tables: `renters`, `projects`, `leads`, `factory_settings`)
+  - ORM: Drizzle ORM with D1 driver (`drizzle-orm/d1`)
+  - Migrations: `factory-core/migrations/` (3 migrations: 0000–0002)
 
-- `sites` - Rank and Rent website projects
-  - Fields: `name`, `niche`, `city`, `domain`, `status` (enum: draft/published/rented), `contentId`, `ownerId`, `clientEmail`, `monthlyRent`, `createdAt`
-  - Access rules: Users can read all, update/delete only own sites (`ownerId == request.auth.uid`)
+**Key-Value Store:**
+- Cloudflare KV - Session/cache storage for factory-core
+  - Binding name: `KV`; namespace ID: `FACTORY_KV_ID` (from `wrangler.toml`)
 
-- `leads` - Lead generation results from deployed sites
-  - Fields: `siteId`, `customerName`, `customerEmail`, `customerPhone`, `message`, `status` (enum: new/contacted/qualified/closed), `createdAt`
-  - Access rules: Signed-in can read/update/delete; public can create
+**File Storage:**
+- Google Drive - Planned upload target for generated proof PDFs (`server.ts` `/api/proof/generate` stub)
+- Firebase Storage - Available (bucket: `soliwkr.firebasestorage.app`), not yet actively used in source
 
-**Firestore Security Rules:**
-- File: `firestore.rules`
-- Default: Deny all access
-- Authentication helper: `isSignedIn()` checks `request.auth != null`
-- Ownership validation: `isOwner(userId)` for update/delete operations
-- ID validation: `isValidId(id)` ensures alphanumeric + hyphens + underscores (max 128 chars)
-- Note: Lead creation is public (unauthenticated users can submit)
-
-**Firebase Storage:**
-- Bucket: `soliwkr.firebasestorage.app`
-- Use case: Storing generated PDFs and site assets
-- Client: Firebase SDK
+**Spreadsheets (Operational):**
+- Google Sheets - Lead CRM log for client-mgc-reparation
+  - Integration: Google Apps Script webhook (`client-mgc-reparation/google_apps_script_webhook.js`)
+  - Sheet name: `Leads`
+  - Triggered via: `doPost` (incoming HTTP POST from lead form)
 
 ## Authentication & Identity
 
 **Auth Provider:**
-- Firebase Authentication with Google OAuth
-  - Implementation: `src/lib/firebase.ts`
-  - Provider: `GoogleAuthProvider` from Firebase
-  - Sign-in method: `signInWithPopup(auth, googleProvider)`
-  - Sign-out method: `firebaseSignOut(auth)`
-  - Current user tracking: `onAuthStateChanged()` listener
+- Firebase Authentication (Google OAuth)
+  - Implementation: `signInWithPopup` with `GoogleAuthProvider` in `src/lib/firebase.ts`
+  - Exported helpers: `signInWithGoogle()`, `signOut()`
+  - Firestore security rules enforce `request.auth != null` for data access
 
-**Google Service Account Auth:**
-- JWT-based authentication for server-side Google APIs
-- Environment variables needed:
-  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-  - `GOOGLE_PRIVATE_KEY` or `GOOGLE_SERVICE_ACCOUNT_JSON`
-  - `GOOGLE_ANALYTICS_ACCOUNT_ID`
-- Implementation: `server.ts` line 51-57
-- Key parsing: Handles both raw private key and full JSON credential formats
+- Google Service Account (JWT) - Server-to-server auth for GSC and GA4 Admin APIs
+  - Auth library: `google-auth-library` in `server.ts`
+  - Credentials: `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY` (or full JSON via `GOOGLE_SERVICE_ACCOUNT_JSON`)
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- Console logging for development (no external error tracking configured)
-- Firebase-specific error handling: `handleFirestoreError()` in `src/lib/firebase.ts`
-  - Catches permission-denied errors
-  - Returns user auth context in error messages
+- Not detected (no Sentry, Datadog, or equivalent found)
 
 **Logs:**
-- Console-based logging in development
-- Server: `console.error()` and `console.log()` in `server.ts`
-- Client: Browser console via React/JavaScript
-
-**Health Check:**
-- Endpoint: `GET /api/health` (Express route in `server.ts`)
-- Response: `{ status: "ok" }`
+- `console.error` and `console.log` used throughout codebase
+- Cloudflare Workers logs via Wrangler in development
 
 ## CI/CD & Deployment
 
 **Hosting:**
-- Cloudflare Pages (primary deployment target)
-  - API tokens: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` env vars
-  - Deployment trigger: `/api/deploy/cloudflare` (POST) in `server.ts`
-  - Build artifact: `dist/` directory from Vite
+- Root app: Google Cloud Run (inferred from `APP_URL` env var description in `.env.example`)
+- factory-core: Cloudflare Workers (`wrangler deploy --minify`)
+- client-mgc-reparation: Cloudflare Pages (deploy hook in `.env.example`)
 
-- Express server deployment
-  - Server file: `server.ts` (runs on port 3000)
-  - Development: `npm run dev` (runs via tsx)
-  - Production: Vite builds to `dist/`, server serves SPA
-
-**Build Process:**
-- `npm run build` - Vite production build (outputs to `dist/`)
-- `npm run preview` - Local preview of production build
-- `npm run clean` - Remove build artifacts
-- `npm run dev` - Development server with Vite HMR
+**CI Pipeline:**
+- Not detected (no GitHub Actions workflows, CircleCI, etc.)
 
 ## Environment Configuration
 
-**Required env vars:**
-1. `GEMINI_API_KEY` - Google Generative AI API key (critical)
-2. `APP_URL` - Base URL for the application (used in OAuth callbacks)
-3. `CLOUDFLARE_API_TOKEN` - Cloudflare deployment automation
-4. `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account reference
-5. `META_WA_CLIENT_ID` - Meta/WhatsApp Business API
-6. `META_WA_ACCESS_TOKEN` - Meta authentication token
-7. `VOIP_API_KEY` - VoIP provider API key (placeholder)
-8. `VOIP_API_SECRET` - VoIP provider secret (placeholder)
-9. `GOOGLE_SERVICE_ACCOUNT_JSON` - Google Cloud service account (JSON string)
+**Required env vars (root app):**
+- `GEMINI_API_KEY`
+- `APP_URL`
+- `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+- `META_WA_CLIENT_ID`, `META_WA_ACCESS_TOKEN`
+- `VOIP_API_KEY`, `VOIP_API_SECRET`
+- `GOOGLE_SERVICE_ACCOUNT_JSON` (or `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY`)
+- `GOOGLE_ANALYTICS_ACCOUNT_ID`
 
-**Optional env vars:**
-- `NODE_ENV` - Set to "production" for production deployment
-- `DISABLE_HMR` - Set to "true" to disable Hot Module Replacement in Vite
+**Required secrets (factory-core via Wrangler):**
+- `RESEND_API_KEY`
+- `GITHUB_TOKEN`
+- `GOOGLE_AI_API_KEY`
+- `CF_ACCOUNT_ID`, `CF_AI_GATEWAY_NAME`, `CF_AI_GATEWAY_TOKEN`
 
 **Secrets location:**
-- `.env` file (local development, never committed)
-- Environment variables injected at runtime in production
-- AI Studio: Secrets panel for `GEMINI_API_KEY` injection
+- Root app: `.env` file (gitignored; `.env.example` present at project root)
+- factory-core: `factory-core/.dev.vars` (local) and Wrangler secrets store (production)
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- `/api/google/setup-asset` (POST) - Receives domain, configures Google Search Console and GA4
-- `/api/deploy/cloudflare` (POST) - Triggers Cloudflare deployment
-- `/api/scrape-site` (GET) - Receives URL, returns scraped HTML (CORS bypass)
-- `/api/proof/generate` (POST) - Placeholder for PDF generation and Drive upload
+- `POST /` on Google Apps Script web app URL - Receives lead form submissions from client-mgc-reparation, logs to Google Sheets and triggers email alert via `MailApp` (`client-mgc-reparation/google_apps_script_webhook.js`)
+- `GET /api/leads/verify?token=...` - Email verification callback for double opt-in lead flow (`factory-core/src/api/leads.ts`)
 
 **Outgoing:**
-- Firebase/Firestore writes from client
-- Google APIs calls from server:
-  - Search Console site addition
-  - GA4 property and stream creation
-  - Web scraping via fetch API (for Cloudflare Pages)
-- OAuth callbacks to `APP_URL` (configured in Firebase console)
-
-**Data Flow for Site Setup:**
-1. Client triggers site import via URL
-2. Server scrapes HTML via `/api/scrape-site`
-3. Gemini AI analyzes HTML content and extracts niche/services
-4. Results stored in Firestore `sites` collection
-5. Optional: `/api/google/setup-asset` configures monitoring
-
-## Integration Points Summary
-
-**Client-Side (React/Browser):**
-- Firebase Auth (Google OAuth)
-- Firestore real-time listeners
-- Gemini API calls (via Vite env injection)
-- Lucide icons, Motion animations, Recharts visualization
-
-**Server-Side (Express/Node):**
-- Google APIs (Search Console, Analytics, Auth)
-- Web scraping (fetch API)
-- Firestore operations
-- Cloudflare deployment triggers
-- Environment variable validation and parsing
+- Resend API (`https://api.resend.com/emails`) - Sends verification emails on lead creation
+- GitHub API - Creates repos and files programmatically on project generation
+- Cloudflare AI Gateway - Routes Gemini AI requests through Cloudflare
 
 ---
 

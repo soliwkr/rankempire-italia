@@ -4,240 +4,172 @@
 
 ## Pattern Overview
 
-**Overall:** Full-stack Isomorphic JavaScript/TypeScript application with monolithic UI-driven architecture combining client-side React frontend, server-side Express backend, and AI-powered backend services using Google Gemini API.
+**Overall:** Multi-application monorepo with a React SPA + Express dev server (main app) and a separate Cloudflare Workers API backend (factory-core).
 
 **Key Characteristics:**
-- UI-first architecture: React (19.0.0) with Vite (6.2.0) bundler handling all navigation and state management
-- Express (4.21.2) server provides middleware and API routing for third-party integrations
-- AI integration via Google Gemini 3-Flash and 3.1-Pro APIs with grounded web search capabilities
-- Real-time data persistence using Firebase Firestore with reactive subscriptions
-- Hybrid development: Vite dev server with Express middleware for serving in both dev and production modes
+- The main application (`/`) is a React SPA backed by Firebase Firestore for persistence and served via an Express + Vite dev server (`server.ts`).
+- `factory-core/` is an independent Hono-based Cloudflare Worker that exposes REST endpoints for the site-factory pipeline (lead intake, project management, AI content generation).
+- AI calls (Gemini API) are made both directly from the React frontend (via Vite env injection) and from the Cloudflare Worker via Cloudflare AI Gateway.
+- There is no shared package between the two sub-applications. Each has its own `package.json`, `tsconfig.json`, and dependency tree.
 
 ## Layers
 
-**Presentation / UI Layer:**
-- Purpose: Render interactive UI components and manage user interactions
-- Location: `src/` directory (React/TSX files)
-- Contains: React components, hooks, styling (Tailwind CSS), icon systems (Lucide), animations (Motion)
-- Depends on: Services layer (Gemini/Firestore), shared utility functions, type definitions
-- Used by: User browser, accessed via `index.html` entry point
+**Frontend SPA:**
+- Purpose: Operator-facing dashboard for intelligence, site factory management, CRM, and settings.
+- Location: `src/`
+- Contains: React components, Firestore real-time subscriptions, Gemini API calls, UI state.
+- Depends on: Firebase Auth/Firestore (`src/lib/firebase.ts`), Gemini service (`src/services/gemini.ts`, `src/services/geminiScout.ts`), `lucide-react`, `motion/react`, Recharts, `react-markdown`.
+- Used by: End users (operators) via browser.
 
-**Services Layer:**
-- Purpose: Encapsulate API calls, AI reasoning, and business logic for market intelligence and data analysis
-- Location: `src/services/` directory
-- Contains: 
-  - `gemini.ts` - AI prompt engineering and structured generation (PPL plans, site content, niche research)
-  - `geminiScout.ts` - Multi-step market scouting pipeline with Google Search grounding
-- Depends on: Google Gemini API client (`@google/genai`), type definitions
-- Used by: App.tsx, MassScout.tsx component
+**Express Dev/Prod Server:**
+- Purpose: Serves the Vite SPA in development (middleware mode) and static `dist/` in production. Also provides server-side proxy endpoints that bypass browser CORS and integrate Google APIs (Search Console, Analytics Admin).
+- Location: `server.ts`
+- Contains: Express routes (`/api/health`, `/api/google/setup-asset`, `/api/deploy/cloudflare`, `/api/scrape-site`, `/api/proof/generate`), Vite middleware in development.
+- Depends on: `express`, `vite`, `googleapis`, `dotenv`.
+- Used by: The React SPA for CORS-bypass calls; the runtime serving `dist/` in production.
 
-**Integration Layer:**
-- Purpose: Manage external API authentication and client initialization
+**factory-core Cloudflare Worker:**
+- Purpose: Backend for the deployed site-factory pipeline. Handles lead ingestion (with double opt-in verification), project/deployment orchestration via GitHub API, and AI content generation via Cloudflare AI Gateway.
+- Location: `factory-core/src/`
+- Contains: Hono app, REST API route handlers, service classes, Drizzle ORM schema.
+- Depends on: Hono, Drizzle ORM, Cloudflare D1 (SQLite), Cloudflare KV, GitHub API, Resend email, Gemini 2.5 Flash via Cloudflare AI Gateway.
+- Used by: Deployed rank-and-rent sites (lead forms), internal orchestration.
+
+**Service Layer (main app):**
+- Purpose: Encapsulates all Gemini API calls used by the frontend.
+- Location: `src/services/`
+- Contains:
+  - `src/services/gemini.ts` — `generatePplPlan`, `researchNiche`, `generateSiteContent`, `analyzeCloudflareSite`
+  - `src/services/geminiScout.ts` — `brainstormServices`, `estimateCpc`, mass market scouting pipeline functions
+
+**Service Layer (factory-core):**
+- Purpose: Encapsulates external API integrations behind reusable classes.
+- Location: `factory-core/src/services/`
+- Contains:
+  - `factory-core/src/services/ai.ts` — `AiService` class (Cloudflare AI Gateway → Gemini 2.5 Flash)
+  - `factory-core/src/services/github.ts` — `GitHubService` class (repo-from-template, file creation)
+  - `factory-core/src/services/email.ts` — `EmailService` class (Resend API, verification emails)
+  - `factory-core/src/services/prompts.ts` — `PromptService` class (locale/avatar-aware prompt builder)
+  - `factory-core/src/services/geo.ts` — Geographic targeting helpers
+
+**Data Layer (factory-core):**
+- Purpose: Defines the SQLite schema and is accessed directly in route handlers via Drizzle.
+- Location: `factory-core/src/db/schema.ts`
+- Contains: `renters`, `projects`, `leads`, `factorySettings` tables.
+- Used by: `factory-core/src/api/leads.ts`, `factory-core/src/api/projects.ts`
+
+**Firebase Integration (main app):**
+- Purpose: Centralises Firebase initialisation, Auth helpers, Firestore client, and permission-denied error normalisation.
 - Location: `src/lib/firebase.ts`
-- Contains: Firebase app initialization, auth helpers (Google OAuth), Firestore client setup, error handling utilities
-- Depends on: Firebase SDK, Firebase configuration file
-- Used by: App.tsx for auth state management and real-time database subscriptions
-
-**Data / Backend Layer:**
-- Purpose: Provide server-side APIs for Google integrations, file operations, and future webhook handling
-- Location: `server.ts` (root level)
-- Contains:
-  - Health check endpoints (`/api/health`)
-  - Google APIs setup (`/api/google/setup-asset` - Search Console and GA4 property creation)
-  - Site scraping proxy (`/api/scrape-site` - CORS bypass)
-  - Deployment triggers (`/api/deploy/cloudflare` - placeholder)
-  - Proof package generation (`/api/proof/generate` - placeholder)
-- Depends on: Express.js, Google APIs client library (`googleapis`), dotenv for secrets
-- Used by: Frontend making HTTP requests, served via Express on port 3000
-
-**Configuration & Build Layer:**
-- Purpose: Define compilation, bundling, and environment configuration
-- Location: Root level files
-- Contains:
-  - `tsconfig.json` - TypeScript compiler configuration (ES2022 target, JSX support, path aliases)
-  - `vite.config.ts` - Vite bundler configuration (React plugin, Tailwind integration, dev server HMR)
-  - `package.json` - Dependencies and npm scripts
-  - `firebase-applet-config.json` - Firebase credentials (non-secret JSON config)
-  - `.env.example` - Environment variable template (secrets reference only)
-- Depends on: Node.js tooling
-- Used by: Build process, development server, production deployment
+- Contains: `db`, `auth`, `googleProvider`, `signInWithGoogle`, `signOut`, `handleFirestoreError`.
 
 ## Data Flow
 
-**Authentication Flow:**
+**Intelligence Analysis (PPL Deep Dive):**
 
-1. User clicks "Accedi con Google" button in App.tsx
-2. Google OAuth popup triggered via `signInWithGoogle()` from `src/lib/firebase.ts`
-3. Firebase Auth manages session; `onAuthStateChanged()` hook subscribes to user state
-4. User object updates React state in `App.tsx`; authenticated content renders
-5. User can sign out via `signOut()` button, clearing session
+1. Operator enters niche + city in `src/App.tsx` → `handleAnalyzeIntelligence`.
+2. `generatePplPlan(niche, city)` in `src/services/gemini.ts` calls Gemini (`gemini-3-flash-preview`) with Google Search grounding enabled.
+3. Parsed JSON is stored in state (`setPplPlan`) and persisted to Firestore `opportunities` collection via `addDoc`.
+4. UI re-renders with plan data; Firestore `onSnapshot` listener also reflects the new document.
 
-**Market Intelligence Analysis Flow (Single PPL):**
+**Mass Scout Flow:**
 
-1. User enters niche + city in Intelligence tab UI (App.tsx)
-2. Clicks "Analizza Opportunità Grounded"
-3. `generatePplPlan(niche, city)` called from `src/services/gemini.ts`
-4. Gemini API receives structured prompt with system instruction
-5. Gemini uses `googleSearch` tool to ground analysis in real SERP/competitor data
-6. Response formatted as JSON matching PPL battle plan schema
-7. Results displayed in UI with keyword tables, profit projections, ad copy examples
-8. Data saved to Firestore `opportunities` collection with `serverTimestamp()`
+1. Operator selects Italian cities in `src/components/MassScout.tsx`.
+2. `handleStartAnalysis` calls sequential steps from `src/services/geminiScout.ts`:
+   - `brainstormServices` → `estimateCpc` → demand analysis → SERP intelligence → opportunity ranking.
+3. Each step updates the step status in local state (`updateStep`). Final `Opportunity[]` array is stored in `finalReport` state.
+4. No Firestore persistence for mass scout results (in-memory only).
 
-**Mass Scouting Analysis Flow:**
+**Site Deployment (factory-core):**
 
-1. User selects Italian cities in geotarget panel (MassScout.tsx)
-2. Clicks "Avvia Mass Scouting"
-3. Five-step pipeline begins:
-   - Step 1: `brainstormServices()` - Generates 50 local service categories via Gemini
-   - Step 2: `estimateCpc()` - Estimates CPC costs for top 20 services using Google Search grounding
-   - Step 3: `analyzeDemand()` - Identifies growth trends; filters declining sectors
-   - Step 4: `analyzeCompetition()` - Scans real SERPs for weak competitors, slow sites, low GMB ratings across selected cities
-   - Step 5: Sorts opportunities by `potentialRentValue`, returns top 10
-4. Each step updates UI progress indicator
-5. Final report displayed with opportunity cards (service name, city, profit projection, action button)
+1. `POST /api/projects/:id/deploy` retrieves project from Cloudflare D1 via Drizzle.
+2. `GitHubService.createProjectRepo` clones `StudioPuraLuce/astro-base` template.
+3. `GitHubService.createFile` writes a project config JSON into the new repo.
+4. GitHub Actions CI (on the template repo) builds and deploys to Cloudflare Pages automatically.
 
-**Site Import Flow (Cloudflare):**
+**Lead Intake (factory-core):**
 
-1. User clicks "Importa da Cloudflare" button
-2. Prompts for Cloudflare Pages URL
-3. Frontend calls `/api/scrape-site` endpoint (Express server)
-4. Server fetches HTML content, bypasses CORS, returns raw HTML
-5. Frontend calls `analyzeCloudflareSite(html, url)` from `src/services/gemini.ts`
-6. Gemini extracts niche, city, services, SEO rating from HTML
-7. Results saved to Firestore `sites` collection
+1. Public lead form on a deployed site `POST /api/leads`.
+2. Honeypot field checked; Zod schema validates the payload.
+3. Lead written to D1 with `doiStatus: 'pending'`.
+4. `EmailService` sends a double-opt-in verification email via Resend.
+5. On `/verify?token=...`, `doiStatus` is updated to `'verified'` and an alert email is sent to the operator.
 
-**Google Assets Setup Flow:**
+**Cloudflare Site Import (main app):**
 
-1. User clicks "Setup Google APIs" on a site card
-2. Frontend POST to `/api/google/setup-asset` with domain
-3. Server validates environment variables (`GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_ANALYTICS_ACCOUNT_ID`)
-4. Server parses private key from environment
-5. Creates JWT auth client with Google APIs
-6. Calls Search Console API to add site
-7. Calls Analytics Admin API to create GA4 property and web data stream
-8. Returns results to frontend; user sees confirmation/error alert
-
-**Real-time Data Synchronization:**
-
-1. App.tsx uses `onSnapshot()` subscriptions (from `firebase/firestore`) for three collections: `opportunities`, `sites`, `leads`
-2. Each subscription listens for real-time document changes
-3. On create/update/delete, Firebase calls callback with snapshot
-4. React state updated immediately
-5. UI re-renders with fresh data
-6. Unsubscribe functions cleanup on component unmount
+1. Operator provides a Cloudflare Pages URL.
+2. `GET /api/scrape-site?url=...` (Express server) fetches the HTML, bypassing browser CORS.
+3. `analyzeCloudflareSite(html, url)` calls Gemini to extract niche/city/services/SEO rating.
+4. Analysed data stored in Firestore `sites` collection.
 
 **State Management:**
-
-- React local state (useState) handles:
-  - Active tab navigation (`activeTab`)
-  - UI input fields (niche, city, search filters)
-  - Loading and analysis states (`isAnalyzing`, `loading`)
-  - Generated content (PPL plans, opportunities)
-  - Form submissions (import URL prompts)
-- Firebase Firestore serves as single source of truth for persistent data:
-  - `opportunities` collection: PPL analysis results
-  - `sites` collection: Managed properties with SEO ratings, rental status
-  - `leads` collection: Contact leads and CRM data
-- No centralized state management library (Redux/Zustand); all state either local or Firebase-driven
+- All top-level application state lives in `src/App.tsx` using React `useState`.
+- Firestore collections (`opportunities`, `sites`, `leads`) are synced in real-time via `onSnapshot` listeners in `useEffect`.
+- `src/components/MassScout.tsx` manages its own local state (steps, cities, report).
+- No Redux, Zustand, or React Context is used.
 
 ## Key Abstractions
 
-**PPL Battle Plan Generator:**
-- Purpose: Create comprehensive pay-per-lead marketing strategies grounded in real market data
-- Examples: `src/services/gemini.ts` - `generatePplPlan()` function
-- Pattern: Prompt-driven AI generation with structured JSON output; uses Google Search grounding to avoid hallucination
+**Firestore Collections (main app):**
+- Purpose: Primary persistence layer for the operator dashboard.
+- Schema defined in: `firebase-blueprint.json`
+- Collections: `opportunities`, `sites`, `leads`
+- Rules: `firestore.rules`
 
-**Nexus Mass Scoping Engine:**
-- Purpose: Automate discovery of high-value service/location combinations across Italian markets
-- Examples: `src/services/geminiScout.ts` with five-step pipeline
-- Pattern: Sequential AI calls with schema-driven responses; parallelizable via batch API calls
+**Drizzle Schema (factory-core):**
+- Purpose: Strongly-typed SQLite schema for Cloudflare D1.
+- Defined in: `factory-core/src/db/schema.ts`
+- Tables: `renters`, `projects`, `leads`, `factorySettings`
 
-**Site Import & Analysis:**
-- Purpose: Reverse-engineer Cloudflare-hosted sites to extract SEO and niche metadata
-- Examples: `analyzeCloudflareSite()` in `src/services/gemini.ts`
-- Pattern: HTML scraping proxy + Gemini vision/extraction
+**PPL Template:**
+- Purpose: Reusable component blueprint for high-conversion Pay-Per-Lead landing pages.
+- Location: `src/lib/templates/GenericPPLTemplate.ts`
+- Pattern: Exported constant object (`GenericPPLTemplate`) with theme tokens and ordered component list.
 
-**Firebase Real-time Sync:**
-- Purpose: Keep UI in sync with backend database without polling
-- Examples: Subscriptions in App.tsx `useEffect()`
-- Pattern: onSnapshot listeners with cleanup
+**Hono App (factory-core):**
+- Purpose: Cloudflare Worker entry point composing all route modules.
+- Location: `factory-core/src/index.ts`
+- Pattern: `app.route('/api/leads', leadsApi)` — routes are modular Hono instances imported as sub-apps.
+
+**AiService (factory-core):**
+- Purpose: Abstraction over Cloudflare AI Gateway → Gemini 2.5 Flash.
+- Location: `factory-core/src/services/ai.ts`
+- Pattern: Class instantiated per-request with config pulled from `c.env` Worker bindings.
 
 ## Entry Points
 
-**Client Entry Point:**
-- Location: `index.html` (root level)
-- Triggers: Browser loads application
-- Responsibilities: Define HTML shell, load React root element, bootstrap main.tsx
+**Main App (development):**
+- Location: `server.ts`
+- Triggers: `npm run dev` → `tsx server.ts`
+- Responsibilities: Starts Express on port 3000, attaches Vite as middleware, registers all `/api/*` routes.
 
-**React Entry Point:**
+**Main App (production):**
+- Location: `server.ts` + `dist/` (built by Vite)
+- Triggers: `npm run build` then `node server.ts` with `NODE_ENV=production`
+- Responsibilities: Serves static `dist/` and handles all `/api/*` routes.
+
+**SPA Entry:**
 - Location: `src/main.tsx`
-- Triggers: Called from index.html script tag
-- Responsibilities: Mount React app into DOM via `createRoot().render()`
+- Triggers: Loaded as module by `index.html`
+- Responsibilities: Mounts `<App />` under React StrictMode.
 
-**App Component (Root Router):**
-- Location: `src/App.tsx`
-- Triggers: Mounted by main.tsx
-- Responsibilities:
-  - Manage authentication state
-  - Subscribe to Firestore real-time updates (opportunities, sites, leads)
-  - Render tab navigation (dashboard, intelligence, sites, crm, settings)
-  - Orchestrate all major UI flows
-  - Handle API calls to Express server
-
-**Server Entry Point:**
-- Location: `server.ts` (root level)
-- Triggers: `npm run dev` or production startup
-- Responsibilities:
-  - Initialize Express app
-  - Configure middleware (JSON, URL encoding)
-  - Define API routes for Google integrations, scraping, deployment
-  - Integrate Vite middleware (dev mode) or serve static dist/ (production)
-  - Listen on port 3000
+**factory-core Worker:**
+- Location: `factory-core/src/index.ts`
+- Triggers: `wrangler dev` (local) or `wrangler deploy` (Cloudflare)
+- Responsibilities: Exports Hono app as default, routes requests to `leadsApi`, `projectsApi`, `generateApi`.
 
 ## Error Handling
 
-**Strategy:** Multi-layered error handling with user-friendly alerts and console logging for debugging.
+**Strategy:** Mostly try/catch with `console.error` + user-facing `alert()` in the SPA; structured HTTP error responses (`c.json({ error }, status)`) in factory-core.
 
 **Patterns:**
-
-**Firebase/Firestore Errors:**
-- Caught in `handleFirestoreError()` utility from `src/lib/firebase.ts`
-- Checks for `permission-denied` code; throws detailed error object with auth context
-- UI catches and displays alert to user
-
-**Gemini API Errors:**
-- Try/catch in service functions (`src/services/gemini.ts`, `src/services/geminiScout.ts`)
-- JSON parsing errors handled with fallback extraction regex
-- App.tsx catches and alerts user: "Errore durante l'analisi. Verifica la API Key e riprova."
-
-**Network/Fetch Errors:**
-- API calls (e.g., `/api/scrape-site`) wrapped in try/catch
-- Server-side errors returned as JSON `{ error: "message" }`
-- Frontend checks response for `.error` field; throws custom Error for catch blocks
-
-**Google APIs Server Errors:**
-- `server.ts` routes check for missing environment variables upfront
-- JWT auth failures caught and returned as 500 with "Failed to authenticate or initialize Google APIs"
-- Individual API calls (Search Console, Analytics) wrapped in try/catch with result objects
+- `src/lib/firebase.ts` — `handleFirestoreError` normalises `permission-denied` errors into a structured JSON error thrown as `Error`.
+- `factory-core/src/api/leads.ts` — Zod `safeParse` returns 400 with `errors` array on validation failure.
+- `src/services/geminiScout.ts` — `parseSafeJson` has a fallback regex extractor to handle dirty Gemini text responses.
+- Express server routes catch errors and return `res.status(500).json({ error: e.message })`.
 
 ## Cross-Cutting Concerns
 
-**Logging:** 
-- Console logging via `console.error()` and `console.log()` in services and components
-- No structured logging library; outputs to browser/server console
-- Errors logged before user alert for debugging
-
-**Validation:**
-- Environment variable validation in `server.ts` before API calls
-- Client-side button disable states prevent invalid submissions (e.g., missing niche/city)
-- Firestore rules via `firestore.rules` file define backend access control
-
-**Authentication:**
-- Google OAuth 2.0 via Firebase Auth
-- Session persisted in `auth.currentUser`
-- `onAuthStateChanged()` automatically re-authenticates on page reload
-- User UID stored in Firestore documents for data isolation
-
----
-
-*Architecture analysis: 2026-04-24*
+**Logging:** `console.error` throughout; no structured logging framework.
+**Validation:** Zod used in factory-core (`factory-core/src/api/leads.ts`); no validation library used in the main app (raw form inputs).
+**Authentication:** Firebase Auth with Google provider (`src/lib/firebase.ts`). The main app gates all UI behind `onAuthStateChanged`. factory-core has no auth layer on its public lead endpoint (intentional for form submissions).

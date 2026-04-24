@@ -5,149 +5,136 @@
 ## Naming Patterns
 
 **Files:**
-- Components: PascalCase (e.g., `MassScout.tsx`, `App.tsx`)
-- Services: camelCase (e.g., `gemini.ts`, `geminiScout.ts`)
-- Types/interfaces: PascalCase (e.g., `types.ts` containing `AnalysisStep`, `Opportunity`)
-- Templates: PascalCase with Template suffix (e.g., `GenericPPLTemplate.ts`)
-- Library files: camelCase (e.g., `firebase.ts`)
+- React components: PascalCase `.tsx` — e.g., `MassScout.tsx`, `App.tsx`
+- Services (pure logic): camelCase `.ts` — e.g., `gemini.ts`, `geminiScout.ts`
+- Library/utility modules: camelCase `.ts` — e.g., `firebase.ts`
+- Type definition files: camelCase `.ts` — e.g., `types.ts`
+- Templates: PascalCase `.ts` — e.g., `GenericPPLTemplate.ts`
 
 **Functions:**
-- Exported async functions: camelCase with descriptive verb-first pattern (e.g., `generatePplPlan`, `estimateCpc`, `analyzeDemand`, `brainstormServices`)
-- React component functions: PascalCase (e.g., `MassScout`, `App`)
-- Utility/helper functions: camelCase (e.g., `handleAnalyzeIntelligence`, `toggleCity`, `updateStep`)
-- Event handlers: camelCase with `handle` prefix (e.g., `handleStartAnalysis`, `handleAnalyzeIntelligence`, `handleImportCloudflare`)
+- Event handlers: `handle` prefix, camelCase — e.g., `handleAnalyzeIntelligence`, `handleImportCloudflare`, `handleStartAnalysis`
+- Exported service functions: camelCase — e.g., `generatePplPlan`, `researchNiche`, `analyzeCloudflareSite`, `brainstormServices`
+- Utility/helper functions defined inside files: camelCase — e.g., `parseSafeJson`, `cn`, `classNameMerge`
 
-**Variables:**
-- State variables: camelCase (e.g., `isAnalyzing`, `selectedCities`, `finalReport`, `niche`, `city`)
-- Constants: camelCase for object/array constants (e.g., `initialSteps`, `ITALIAN_CITIES`)
-- Class instances and objects: camelCase (e.g., `serviceCpcMap`, `competitorAnalysisInstruction`)
+**Variables and State:**
+- React state: camelCase noun or noun phrase — e.g., `isAnalyzing`, `finalReport`, `selectedCities`, `pplPlan`
+- Boolean state: `is`/`has` prefix — e.g., `isAnalyzing`, `importingCf`
+- Constants: `UPPER_SNAKE_CASE` for module-level constants — e.g., `ITALIAN_CITIES`, `SYSTEM_INSTRUCTION`
 
-**Types/Interfaces:**
-- Enums: PascalCase with SCREAMING_SNAKE_CASE values (e.g., `StepStatus.PENDING`, `StepStatus.RUNNING`)
-- Interface names: PascalCase (e.g., `AnalysisStep`, `ServiceCpc`, `ServiceTrend`, `Opportunity`, `FirestoreErrorInfo`)
-- Type aliases: PascalCase (e.g., `ClassValue`)
+**Types and Interfaces:**
+- Interfaces: PascalCase — e.g., `AnalysisStep`, `FirestoreErrorInfo`, `ServiceCpc`, `Opportunity`
+- Enums: PascalCase name, UPPER_SNAKE_CASE values — e.g., `StepStatus.PENDING`, `StepStatus.RUNNING`
+- Type aliases: PascalCase — e.g., `ClassValue`
 
 ## Code Style
 
 **Formatting:**
-- No explicit formatter configured (no Prettier, ESLint, or Biome config found)
-- 2-space indentation observed throughout codebase
-- Single quotes preferred in JavaScript/TypeScript strings (observed in imports: `'firebase/auth'`)
-- Semicolons used consistently at end of statements
-- Lines typically 100-120 characters wide
+- No dedicated Prettier config detected; TypeScript compiler enforced via `tsc --noEmit` (`lint` script in `package.json`)
+- No ESLint config detected
 
 **Linting:**
-- Only TypeScript compiler (`tsc --noEmit`) configured in `package.json` scripts as "lint"
-- No ESLint or Prettier configuration detected
-- TypeScript strict settings: `skipLibCheck: true`, `isolatedModules: true`, `allowJs: true`, `noEmit: true`
-- JSX syntax: `react-jsx` mode enabled in tsconfig
+- Only TypeScript type-checking: `tsc --noEmit`
+- No ESLint or Biome configured
+
+**TypeScript Config:**
+- Target: `ES2022`, module: `ESNext`, JSX: `react-jsx`
+- Path alias `@/*` mapped to project root (`./`)
+- `allowJs: true` — JavaScript files accepted
+- `skipLibCheck: true` — third-party declaration issues suppressed
+- `noEmit: true` — Vite handles transpilation
 
 ## Import Organization
 
-**Order:**
-1. External libraries (React, motion, lucide-react, Google libraries)
-2. Firebase imports
-3. Internal services (gemini, geminiScout)
-4. Internal types and interfaces
-5. Utility functions (clsx, twMerge)
-6. JSON data files and components
-
-**Example from `App.tsx`:**
-```typescript
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { /* Icons */ } from 'lucide-react';
-import { auth, signInWithGoogle, signOut, db, handleFirestoreError } from './lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { generatePplPlan, researchNiche, generateSiteContent, analyzeCloudflareSite } from './services/gemini';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import ReactMarkdown from 'react-markdown';
-import { MassScout } from './components/MassScout';
-```
+**Order (observed pattern):**
+1. React and React hooks (`react`, `react-dom`)
+2. Third-party UI/animation libraries (`motion/react`, `lucide-react`, `clsx`, `tailwind-merge`)
+3. Internal lib modules (e.g., `./lib/firebase`)
+4. Internal services (e.g., `./services/gemini`)
+5. Internal components (e.g., `./components/MassScout`)
+6. Internal types (e.g., `../types`)
+7. JSON/data imports (e.g., `../geotargets.json`)
 
 **Path Aliases:**
-- `@/*` maps to project root (defined in `tsconfig.json`)
-- Currently used rarely; most imports use relative paths
+- `@/*` → project root, configured in `tsconfig.json` and `vite.config.ts`
+- In practice, files use relative imports (`./`, `../`) rather than the `@` alias
 
 ## Error Handling
 
-**Patterns:**
-- Try-catch blocks with error logging to console
-- Console.error used for debugging (e.g., `console.error(e)` in `App.tsx:48`, `MassScout.tsx:98`)
-- User-facing alerts via `alert()` for error messages (e.g., `alert('Errore durante l\'analisi. Verifica la API Key e riprova.')`)
-- Custom error handler `handleFirestoreError` in `firebase.ts` for Firestore permission errors
-- Error objects passed to handlers as `any` type (loose typing)
-- Fallback values using optional chaining and nullish coalescing (e.g., `response.text || '{}'`)
+**Client-side Patterns:**
+- Try/catch with `console.error` + `alert()` for user-visible errors in event handlers (`App.tsx`)
+- Error state variable (`const [error, setError] = useState<string | null>(null)`) used in `MassScout.tsx`
+- Errors displayed inline via conditional JSX (rose-coloured alert box)
+- Catch blocks typed as `e: any` — no structured error typing on caught values
 
-**Example from `firebase.ts`:**
-```typescript
-export const handleFirestoreError = (error: any, operationType: FirestoreErrorInfo['operationType'], path: string | null = null) => {
-  if (error.code === 'permission-denied') {
-    const errorInfo: FirestoreErrorInfo = {
-      error: error.message,
-      operationType,
-      path,
-      authInfo: { /* ... */ }
-    };
-    throw new Error(JSON.stringify(errorInfo));
-  }
-  throw error;
-};
-```
+**Server-side Patterns:**
+- Express handlers use try/catch; inner API calls also wrapped individually (see `/api/google/setup-asset`)
+- Errors logged with `console.error` then sent as `res.status(5xx).json({ error: string })`
+- `instanceof Error` guard before reading `.message` (see `/api/scrape-site`)
+
+**Firebase Error Helper:**
+- `handleFirestoreError` in `src/lib/firebase.ts` serialises `permission-denied` errors into a JSON-structured `Error`; rethrows all others
+
+**JSON Parsing:**
+- `parseSafeJson` in `src/services/geminiScout.ts` strips markdown code fences before parsing; falls back to regex extraction if initial parse fails
+- Gemini responses always guarded with `|| '{}'` before `JSON.parse`
 
 ## Logging
 
 **Framework:** `console` (no logging library)
 
 **Patterns:**
-- Direct `console.error()` calls for exceptions (used in `App.tsx`, `MassScout.tsx`, `firebase.ts`)
-- Alert dialogs for user feedback: `alert('message')` in form submissions and error states
-- No structured logging; error messages are contextual strings
-- Fallback logging in connection test: `console.error("Please check your Firebase configuration.");`
+- `console.error(e)` in every catch block — both client and server
+- No `console.log` or `console.info` in business logic paths
+- Server startup logged via `console.log` in `startServer()`
 
 ## Comments
 
 **When to Comment:**
-- Sparse commenting observed; most code is self-documenting through function and variable naming
-- Comments appear mainly in configuration or workflow explanation
-- Long prompt strings in API calls are inline without wrapping comments
+- Block comments (`// ----`) used to section service files — e.g., `// ADVANCED PPL PLAN GENERATOR`
+- Inline comments explain non-obvious decisions — e.g., `// Truncated per limiti di context`, `// HMR is disabled in AI Studio`
+- JSDoc/TSDoc: Not used
 
-**JSDoc/TSDoc:**
-- Minimal JSDoc usage observed
-- No TSDoc headers on functions
-- Type annotations used instead of JSDoc for typing (example: `async function brainstormServices(): Promise<string[]>`)
+**UI Comments:**
+- JSX sections marked with HTML comments (`{/* Header Navigation */}`, `{/* Stats Sidebar */}`) to orient within large render blocks
 
 ## Function Design
 
 **Size:**
-- Functions are typically 10-50 lines for async service functions
-- Component render functions range 100-400+ lines due to JSX complexity
-- Handlers and callbacks kept concise (5-20 lines)
+- Service functions are single-responsibility and short (< 30 lines of business logic)
+- `App.tsx` contains a monolithic component (~670 lines) with all tab views inline — not split into sub-components
 
 **Parameters:**
-- Named parameters for clarity (e.g., `generatePplPlan(niche: string, location: string, gmbUrl?: string)`)
-- Optional parameters with `?` symbol (e.g., `gmbUrl?: string`)
-- Destructuring used in React hooks (e.g., `const { id, status, result } = step`)
-- Rest parameters for className utilities (e.g., `function cn(...inputs: ClassValue[])`)
+- Service functions accept primitives (strings, arrays) and return typed promises
+- Optional parameters use TypeScript optional syntax: `gmbUrl?: string`
 
 **Return Values:**
-- Explicit return types on async functions (e.g., `Promise<string[]>`, `Promise<Opportunity[]>`)
-- JSON parsing with fallback: `return JSON.parse(response.text || '{}')` pattern used consistently
-- Component functions return JSX/React.ReactNode via implicit typing
+- All async service functions return `JSON.parse(...)` output, untyped (`any`)
+- Event handlers return `void`; async handlers may `return` early on validation failure
 
 ## Module Design
 
 **Exports:**
-- Named exports for functions (e.g., `export const generatePplPlan = async (...)`)
-- Named exports for components (e.g., `export function MassScout()`)
-- Default export for main App component: `export default function App()`
-- Barrel exports from services (e.g., `import * as geminiScout from '../services/geminiScout'`)
+- Services use named `export const` / `export async function` — no default exports from service files
+- Components use `export function` for named export (`MassScout`) and `export default function` for the root component (`App`)
+- Library modules export named functions and constants (`db`, `auth`, `signInWithGoogle`, etc.)
 
 **Barrel Files:**
-- Not extensively used
-- Single-purpose files: `types.ts` exports all interfaces, `firebase.ts` exports all Firebase utilities, services are individual files
+- Not used — each file is imported directly by path
+
+## Utility Helpers
+
+**`cn` / `classNameMerge` (Tailwind class merging):**
+- `cn` defined inline in `src/App.tsx` using `clsx` + `tailwind-merge`
+- `classNameMerge` defined inline in `src/components/MassScout.tsx` — same implementation, duplicated
+- No shared utility module for this helper; each file declares its own
+
+## Type Safety
+
+**Observed weaknesses:**
+- `any[]` used for Firestore document arrays (`opportunities`, `sites`, `leads` state in `App.tsx`)
+- Caught errors typed as `e: any` in most catch blocks
+- Gemini service return types are `any` (result of `JSON.parse`)
+- `e: any` cast used explicitly in some handlers: `catch (e: any)`
 
 ---
 
