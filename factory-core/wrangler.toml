@@ -1,0 +1,18 @@
+name = "factory-core"
+main = "src/index.ts"
+compatibility_date = "2024-04-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "factory-db"
+database_id = "local-db" # This will be used locally
+
+[[kv_namespaces]]
+binding = "KV"
+id = "FACTORY_KV_ID"
+
+[vars]
+EMAIL_FROM = "Rankame <noreply@rankame.com>"
+VERIFICATION_BASE_URL = "https://factory-core.soliwkr.workers.dev/verify"
+# RESEND_API_KEY is secret, set via .dev.vars or 'wrangler secret put'
+# API_SECRET is secret, set via .dev.vars or 'wrangler secret put'
