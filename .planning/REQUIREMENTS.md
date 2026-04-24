@@ -103,41 +103,41 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FACT-01 | — | Pending |
-| FACT-02 | — | Pending |
-| FACT-03 | — | Pending |
-| FACT-04 | — | Pending |
-| FACT-05 | — | Pending |
-| FACT-06 | — | Pending |
-| SITE-01 | — | Pending |
-| SITE-02 | — | Pending |
-| SITE-03 | — | Pending |
-| SITE-04 | — | Pending |
-| SITE-05 | — | Pending |
-| LEAD-01 | — | Pending |
-| LEAD-02 | — | Pending |
-| LEAD-03 | — | Pending |
-| LEAD-04 | — | Pending |
-| LEAD-05 | — | Pending |
-| LEAD-06 | — | Pending |
-| SEO-01 | — | Pending |
-| SEO-02 | — | Pending |
-| SEO-03 | — | Pending |
-| SEO-04 | — | Pending |
-| OUTR-01 | — | Pending |
-| OUTR-02 | — | Pending |
-| OUTR-03 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| DASH-03 | — | Pending |
-| DASH-04 | — | Pending |
-| DASH-05 | — | Pending |
+| FACT-06 | Phase 1 | Pending |
+| SITE-01 | Phase 2 | Pending |
+| SITE-02 | Phase 2 | Pending |
+| SITE-03 | Phase 2 | Pending |
+| SITE-04 | Phase 2 | Pending |
+| FACT-02 | Phase 3 | Pending |
+| FACT-01 | Phase 4 | Pending |
+| FACT-03 | Phase 4 | Pending |
+| FACT-04 | Phase 4 | Pending |
+| FACT-05 | Phase 4 | Pending |
+| SITE-05 | Phase 5 | Pending |
+| LEAD-01 | Phase 6 | Pending |
+| LEAD-02 | Phase 6 | Pending |
+| LEAD-03 | Phase 6 | Pending |
+| LEAD-04 | Phase 6 | Pending |
+| LEAD-05 | Phase 6 | Pending |
+| LEAD-06 | Phase 6 | Pending |
+| SEO-01 | Phase 7 | Pending |
+| SEO-02 | Phase 7 | Pending |
+| SEO-03 | Phase 7 | Pending |
+| SEO-04 | Phase 7 | Pending |
+| OUTR-01 | Phase 8 | Pending |
+| OUTR-02 | Phase 8 | Pending |
+| OUTR-03 | Phase 8 | Pending |
+| DASH-01 | Phase 9 | Pending |
+| DASH-03 | Phase 9 | Pending |
+| DASH-05 | Phase 9 | Pending |
+| DASH-02 | Phase 10 | Pending |
+| DASH-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v1 requirements: 29 totali
-- Mappati a fasi: 0 (roadmap da creare)
-- Non mappati: 29 ⚠️
+- Mappati a fasi: 29 (100%)
+- Non mappati: 0
 
 ---
 *Requirements defined: 2026-04-24*
-*Last updated: 2026-04-24 after initial definition*
+*Last updated: 2026-04-24 after roadmap creation — all 29 v1 requirements mapped*
