@@ -1,0 +1,1 @@
+ALTER TABLE `leads` ADD `verification_token` text;
