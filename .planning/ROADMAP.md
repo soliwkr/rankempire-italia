@@ -10,7 +10,7 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 - Integer phases (1, 2, 3 ...): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions via `/gsd-insert-phase`
 
-- [ ] **Phase 1: Factory-Core Foundation** - Fix auth, Gemini models, D1 schema, and env config so the backend is safe and functional
+- [x] **Phase 1: Factory-Core Foundation** - Fix auth, Gemini models, D1 schema, and env config so the backend is safe and functional (completed 2026-04-25)
 - [ ] **Phase 2: Astro Template Completion** - Full routing, schema.org markup, sitemap, and D1 data fetching replacing Directus
 - [ ] **Phase 3: AI Content Generation** - 105-page programmatic content via Gemini 2.5 Flash with avatar-based copywriting
 - [ ] **Phase 4: Deploy Pipeline** - Wizard backend triggers GitHub repo creation, Cloudflare Pages deploy, and config injection
@@ -36,9 +36,10 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Schema D1 email: aggiungere colonna email a schema.ts + db.insert in entrambi i factory-core
-- [ ] 01-02-PLAN.md — Auth + env config: bearerAuth middleware su endpoint protetti + VERIFICATION_BASE_URL produzione
-- [ ] 01-03-PLAN.md — [BLOCKING] Applicare migration D1 locale + verifica end-to-end tutti i criteri Fase 1
+- [x] 01-01-PLAN.md — Schema D1 email: aggiungere colonna email a schema.ts + db.insert in entrambi i factory-core
+- [x] 01-02-PLAN.md — Auth + env config: bearerAuth middleware su endpoint protetti + VERIFICATION_BASE_URL produzione
+- [x] 01-03-PLAN.md — [BLOCKING] Applicare migration D1 locale + verifica end-to-end tutti i criteri Fase 1
+- [x] 01-04-PLAN.md — Gap closure CR-01+CR-02: return bearerAuth + verificationBaseUrl EmailService
 
 ### Phase 2: Astro Template Completion
 **Goal**: The Astro rank-rent site template has complete routing (all page types), structured data markup, auto-generated sitemap + robots.txt, and fetches all content from factory-core D1 at build time with zero Directus dependency
