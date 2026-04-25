@@ -1,26 +1,17 @@
 ---
 phase: 01-factory-core-foundation
 verified: 2026-04-24T21:00:00Z
-status: gaps_found
-score: 3/5 must-haves verified
+updated: 2026-04-25T00:10:00Z
+status: passed
+score: 5/5 must-haves verified
 overrides_applied: 0
 gaps:
   - truth: "Gli endpoint /api/projects e /api/generate richiedono Authorization: Bearer <token> e restituiscono 401 senza token valido"
-    status: failed
-    reason: "Il middleware bearerAuth è cabllato senza return — la Promise risultante viene ignorata e Hono procede al prossimo handler senza bloccare la richiesta. Le route protette sono di fatto accessibili senza token."
-    artifacts:
-      - path: "factory-core/src/index.ts"
-        issue: "Riga 29: `(c, next) => bearerAuth({ token: c.env.API_SECRET })(c, next)` manca del `return` prima di bearerAuth(...)(c, next). L'arrow function ritorna undefined."
-    missing:
-      - "Aggiungere `return` prima di `bearerAuth({ token: c.env.API_SECRET })(c, next)` oppure usare `async (c, next) => { return bearerAuth({ token: c.env.API_SECRET })(c, next); }` per garantire che la Promise del middleware sia restituita correttamente a Hono."
+    status: resolved
+    resolved_by: "01-04 gap closure — commit 7dcce26: async wrapper + return esplicito bearerAuth"
   - truth: "Il flusso DOI produce email con link di verifica valido (precondizione per SC-4: email col campo email in D1)"
-    status: failed
-    reason: "EmailService viene costruita senza verificationBaseUrl — campo obbligatorio per l'interfaccia EmailConfig. A runtime this.config.verificationBaseUrl è undefined, producendo il link `undefined?token=<uuid>` nell'email DOI."
-    artifacts:
-      - path: "factory-core/src/api/leads.ts"
-        issue: "Riga 60: `new EmailService({ apiKey: c.env.RESEND_API_KEY, from: c.env.EMAIL_FROM })` omette il campo obbligatorio `verificationBaseUrl`. Il Bindings type ha VERIFICATION_BASE_URL (riga 23) ma non viene passato al costruttore."
-    missing:
-      - "Modificare la costruzione di EmailService a: `new EmailService({ apiKey: c.env.RESEND_API_KEY, from: c.env.EMAIL_FROM, verificationBaseUrl: c.env.VERIFICATION_BASE_URL })`"
+    status: resolved
+    resolved_by: "01-04 gap closure — commit d3dbc1a: verificationBaseUrl passato al costruttore EmailService"
 ---
 
 # Phase 1: Factory-Core Foundation — Verifica Report
