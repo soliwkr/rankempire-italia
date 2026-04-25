@@ -57,7 +57,7 @@ api.post('/', async (c) => {
     verificationToken: token,
   });
 
-  const emailService = new EmailService({ apiKey: c.env.RESEND_API_KEY, from: c.env.EMAIL_FROM });
+  const emailService = new EmailService({ apiKey: c.env.RESEND_API_KEY, from: c.env.EMAIL_FROM, verificationBaseUrl: c.env.VERIFICATION_BASE_URL });
   await emailService.sendVerificationEmail(email, token, project_name || 'Rank & Rent Project');
 
   return c.json({ success: true, id: leadId }, 201);
