@@ -9,38 +9,51 @@ describe('pages table schema', () => {
 
   it('deve avere tutti i 9 campi richiesti da D-05', async () => {
     const schema = await import('../db/schema');
-    const columns = Object.keys(schema.pages);
-    // Verifica che il simbolo della tabella esista (è un oggetto Drizzle)
-    expect(schema.pages).toBeDefined();
-    // Verifica struttura Drizzle — la tabella ha un _ con le colonne
-    const tableDef = schema.pages as any;
-    expect(tableDef._).toBeDefined();
-    const colNames = Object.keys(tableDef._.columns);
-    expect(colNames).toContain('id');
-    expect(colNames).toContain('project_id');
-    expect(colNames).toContain('slug');
-    expect(colNames).toContain('type');
-    expect(colNames).toContain('title');
-    expect(colNames).toContain('body');
-    expect(colNames).toContain('faq');
-    expect(colNames).toContain('meta');
-    expect(colNames).toContain('created_at');
+    // Le colonne Drizzle sono accessibili direttamente come proprietà della tabella
+    const tbl = schema.pages as any;
+    expect(tbl).toBeDefined();
+    // Verifica nome colonna DB per ogni campo richiesto
+    expect(tbl.id.name).toBe('id');
+    expect(tbl.projectId.name).toBe('project_id');
+    expect(tbl.slug.name).toBe('slug');
+    expect(tbl.type.name).toBe('type');
+    expect(tbl.title.name).toBe('title');
+    expect(tbl.body.name).toBe('body');
+    expect(tbl.faq.name).toBe('faq');
+    expect(tbl.meta.name).toBe('meta');
+    expect(tbl.createdAt.name).toBe('created_at');
   });
 
   it('faq deve avere default "[]"', async () => {
     const schema = await import('../db/schema');
-    const tableDef = schema.pages as any;
-    const faqCol = tableDef._.columns['faq'];
-    expect(faqCol.default).toBe('[]');
+    const tbl = schema.pages as any;
+    expect(tbl.faq.default).toBe('[]');
   });
 
   it('meta deve avere default "{}"', async () => {
     const schema = await import('../db/schema');
-    const tableDef = schema.pages as any;
-    const metaCol = tableDef._.columns['meta'];
-    expect(metaCol.default).toBe('{}');
+    const tbl = schema.pages as any;
+    expect(tbl.meta.default).toBe('{}');
   });
 });
+
+// Helper: crea un mock D1Database compatibile con drizzle-orm/d1
+// drizzle usa stmt.bind(...params).raw() per le query con fields (SELECT standard)
+// raw() restituisce array di array, nell'ordine delle colonne della SELECT
+function makeMockD1(rowsAsObjects: Record<string, unknown>[]) {
+  // Ordine colonne come nella SELECT di Drizzle per la tabella pages
+  const colOrder = ['id', 'project_id', 'slug', 'type', 'title', 'body', 'faq', 'meta', 'created_at'];
+  const rawRows = rowsAsObjects.map(row => colOrder.map(col => row[col] ?? null));
+  return {
+    prepare: () => ({
+      bind: () => ({
+        raw: async () => rawRows,
+        all: async () => ({ results: rowsAsObjects }),
+      }),
+      all: async () => ({ results: rowsAsObjects }),
+    }),
+  };
+}
 
 // Test 3 & 4: sites.ts router Hono
 describe('GET /:projectId/pages', () => {
@@ -49,12 +62,7 @@ describe('GET /:projectId/pages', () => {
     const mockPages = [
       { id: '1', project_id: 'proj-1', slug: 'homepage', type: 'homepage', title: 'Home', body: '<p>Body</p>', faq: '[]', meta: '{}', created_at: '2026-01-01' }
     ];
-    const mockDB = {
-      prepare: () => ({
-        bind: () => ({ all: async () => ({ results: mockPages }) }),
-        all: async () => ({ results: mockPages }),
-      }),
-    };
+    const mockDB = makeMockD1(mockPages);
     const res = await api.request('/proj-1/pages', {
       method: 'GET',
     }, { DB: mockDB as any });
@@ -66,12 +74,7 @@ describe('GET /:projectId/pages', () => {
 
   it('deve restituire 404 quando non esistono righe per projectId', async () => {
     const { default: api } = await import('./sites');
-    const mockDB = {
-      prepare: () => ({
-        bind: () => ({ all: async () => ({ results: [] }) }),
-        all: async () => ({ results: [] }),
-      }),
-    };
+    const mockDB = makeMockD1([]);
     const res = await api.request('/proj-unknown/pages', {
       method: 'GET',
     }, { DB: mockDB as any });
