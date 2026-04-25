@@ -26,7 +26,7 @@ app.route('/api/leads', leadsApi);
 
 // Endpoint protetti — Bearer token richiesto
 const protectedApp = new Hono<{ Bindings: Bindings }>();
-protectedApp.use('/*', (c, next) => bearerAuth({ token: c.env.API_SECRET })(c, next));
+protectedApp.use('/*', async (c, next) => { return bearerAuth({ token: c.env.API_SECRET })(c, next); });
 protectedApp.route('/api/projects', projectsApi);
 protectedApp.route('/api/generate', generateApi);
 
