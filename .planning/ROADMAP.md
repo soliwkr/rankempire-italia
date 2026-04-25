@@ -11,7 +11,7 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 - Decimal phases (2.1, 2.2): Urgent insertions via `/gsd-insert-phase`
 
 - [x] **Phase 1: Factory-Core Foundation** - Fix auth, Gemini models, D1 schema, and env config so the backend is safe and functional (completed 2026-04-25)
-- [ ] **Phase 2: Astro Template Completion** - Full routing, schema.org markup, sitemap, and D1 data fetching replacing Directus
+- [x] **Phase 2: Astro Template Completion** - Full routing, schema.org markup, sitemap, and D1 data fetching replacing Directus (completed 2026-04-25)
 - [ ] **Phase 3: AI Content Generation** - 105-page programmatic content via Gemini 2.5 Flash with avatar-based copywriting
 - [ ] **Phase 4: Deploy Pipeline** - Wizard backend triggers GitHub repo creation, Cloudflare Pages deploy, and config injection
 - [ ] **Phase 5: Custom Domain Go-Live** - Each deployed site gets its own custom domain on Cloudflare Pages
@@ -54,11 +54,11 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 02-01-PLAN.md — factory-core: tabella D1 pages + endpoint GET /api/sites/:id/pages + [BLOCKING] schema push
-- [ ] 02-02-PLAN.md — Test infrastructure vitest: config + 3 test file RED + fixture (parallel con 02-01)
-- [ ] 02-03-PLAN.md — Astro lib layer: astro.config.mjs + fetchPages + buildSchemaGraph + buildPaths + componenti (SchemaGraph, Breadcrumb, InternalLinks, Layout)
-- [ ] 02-04-PLAN.md — Routing completo: 6 pagine Astro (homepage, service hub, leaf service×zone, zone hub, blog index, blog post)
-- [ ] 02-05-PLAN.md — robots.txt + build smoke test + checkpoint visivo
+- [x] 02-01-PLAN.md — factory-core: tabella D1 pages + endpoint GET /api/sites/:id/pages + [BLOCKING] schema push
+- [x] 02-02-PLAN.md — Test infrastructure vitest: config + 3 test file RED + fixture (parallel con 02-01)
+- [x] 02-03-PLAN.md — Astro lib layer: astro.config.mjs + fetchPages + buildSchemaGraph + buildPaths + componenti (SchemaGraph, Breadcrumb, InternalLinks, Layout)
+- [x] 02-04-PLAN.md — Routing completo: 6 pagine Astro (homepage, service hub, leaf service×zone, zone hub, blog index, blog post)
+- [x] 02-05-PLAN.md — robots.txt + build smoke test + checkpoint visivo
 
 ### Phase 3: AI Content Generation
 **Goal**: The factory-core `/api/generate/content` endpoint produces ~105 pages of localized Italian SEO content using Gemini 2.5 Flash and the three avatar-based prompts (in-pain, skeptic, bundler) for any given niche + city + zone combination
