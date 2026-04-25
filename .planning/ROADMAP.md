@@ -50,8 +50,15 @@ Plans:
   2. Every page includes valid schema.org LocalBusiness and FAQPage JSON-LD in the HTML head
   3. `sitemap.xml` and `robots.txt` are present in the build output and list all generated URLs
   4. Running `astro build` with a factory-core API URL env var fetches content from D1 with no Directus or VPS calls in build logs
-**Plans**: TBD
+**Plans**: 5 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 02-01-PLAN.md — factory-core: tabella D1 pages + endpoint GET /api/sites/:id/pages + [BLOCKING] schema push
+- [ ] 02-02-PLAN.md — Test infrastructure vitest: config + 3 test file RED + fixture (parallel con 02-01)
+- [ ] 02-03-PLAN.md — Astro lib layer: astro.config.mjs + fetchPages + buildSchemaGraph + buildPaths + componenti (SchemaGraph, Breadcrumb, InternalLinks, Layout)
+- [ ] 02-04-PLAN.md — Routing completo: 6 pagine Astro (homepage, service hub, leaf service×zone, zone hub, blog index, blog post)
+- [ ] 02-05-PLAN.md — robots.txt + build smoke test + checkpoint visivo
 
 ### Phase 3: AI Content Generation
 **Goal**: The factory-core `/api/generate/content` endpoint produces ~105 pages of localized Italian SEO content using Gemini 2.5 Flash and the three avatar-based prompts (in-pain, skeptic, bundler) for any given niche + city + zone combination
@@ -147,8 +154,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Factory-Core Foundation | 0/3 | Not started | - |
-| 2. Astro Template Completion | 0/TBD | Not started | - |
+| 1. Factory-Core Foundation | 4/4 | Complete | 2026-04-25 |
+| 2. Astro Template Completion | 0/5 | Not started | - |
 | 3. AI Content Generation | 0/TBD | Not started | - |
 | 4. Deploy Pipeline | 0/TBD | Not started | - |
 | 5. Custom Domain Go-Live | 0/TBD | Not started | - |
