@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { bearerAuth } from 'hono/bearer-auth';
 import leadsApi from './api/leads';
+import sitesApi from './api/sites';
 import projectsApi from './api/projects';
 import generateApi from './api/generate';
 
@@ -23,6 +24,7 @@ app.get('/health', (c) => c.text('OK'));
 
 // Endpoint pubblici — nessun auth richiesto
 app.route('/api/leads', leadsApi);
+app.route('/api/sites', sitesApi); // Contenuto siti: pubblico per design (SEO, fetch Astro build time)
 
 // Endpoint protetti — Bearer token richiesto
 const protectedApp = new Hono<{ Bindings: Bindings }>();
