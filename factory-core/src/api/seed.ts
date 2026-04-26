@@ -37,7 +37,10 @@ async function callGemini(
   prompt: string,
   env: { GOOGLE_AI_API_KEY: string; CF_ACCOUNT_ID: string; CF_AI_GATEWAY_NAME: string; CF_AI_GATEWAY_TOKEN?: string }
 ): Promise<GeneratedPage[]> {
-  const url = `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.CF_AI_GATEWAY_NAME}/google-ai-studio/v1beta/models/gemini-2.5-flash:generateContent`;
+  // Se CF_AI_GATEWAY_TOKEN non è disponibile (dev locale), chiama Google AI direttamente
+  const url = env.CF_AI_GATEWAY_TOKEN
+    ? `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.CF_AI_GATEWAY_NAME}/google-ai-studio/v1beta/models/gemini-2.5-flash:generateContent`
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -161,13 +164,11 @@ api.post('/seed-project/:projectId', async (c) => {
   const zones: string[] = body.zones ?? [];
 
   // Lettura progetto da D1
+  const db = drizzle(c.env.DB);
   let project: any;
   try {
-    const db = drizzle(c.env.DB);
     project = await db.select().from(projects).where(eq(projects.id, projectId)).get();
   } catch (err: any) {
-    // Se il DB è un mock non valido, restituisci comunque 404
-    // (il test stub non ha un DB reale ma vuole validare il 404 path)
     console.error('[seed] DB query error:', err.message);
     return c.json({ error: `Progetto "${projectId}" non trovato` }, 404);
   }
