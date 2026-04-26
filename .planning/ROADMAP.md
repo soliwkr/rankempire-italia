@@ -61,7 +61,7 @@ Plans:
 - [x] 02-05-PLAN.md — robots.txt + build smoke test + checkpoint visivo
 
 ### Phase 3: AI Content Generation
-**Goal**: The factory-core `/api/generate/content` endpoint produces ~105 pages of localized Italian SEO content using Gemini 2.5 Flash and the three avatar-based prompts (in-pain, skeptic, bundler) for any given niche + city + zone combination
+**Goal**: The factory-core `/api/generate/seed-project/:projectId?type=X` endpoint produces ~105 pages of localized Italian SEO content using Gemini 2.5 Flash and the three avatar-based prompts (in-pain, skeptic, bundler) for any given niche + city + zone combination
 **Depends on**: Phase 1
 **Requirements**: FACT-02
 **Success Criteria** (what must be TRUE):
@@ -69,7 +69,12 @@ Plans:
   2. Generated copy reflects the in-pain, skeptic, or bundler avatar voice as specified in the request
   3. All content is in natural Italian with location-specific references (city name, zone names, local idioms)
   4. The endpoint completes within the Cloudflare Worker CPU time limit (no timeout errors)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0: uniqueIndex su pages(project_id, slug) + [BLOCKING] D1 push + test stub RED (seed.test.ts + prompts.test.ts)
+- [ ] 03-02-PLAN.md — PromptService 5 metodi + sanitizeHtml + seed.ts endpoint + loop service_zones + finishReason + upsert D1
+- [ ] 03-03-PLAN.md — scripts/seed-project.ts + smoke test E2E + checkpoint visivo conteggio pagine
 
 ### Phase 4: Deploy Pipeline
 **Goal**: Submitting a project ID triggers the full automated pipeline: GitHub repo created from Astro template, config injected, Cloudflare Pages project created and linked — all without sleep hacks
@@ -156,7 +161,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Factory-Core Foundation | 4/4 | Complete | 2026-04-25 |
 | 2. Astro Template Completion | 0/5 | Not started | - |
-| 3. AI Content Generation | 0/TBD | Not started | - |
+| 3. AI Content Generation | 0/3 | Not started | - |
 | 4. Deploy Pipeline | 0/TBD | Not started | - |
 | 5. Custom Domain Go-Live | 0/TBD | Not started | - |
 | 6. Lead Capture | 0/TBD | Not started | - |
