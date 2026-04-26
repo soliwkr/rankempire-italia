@@ -4,6 +4,7 @@ import leadsApi from './api/leads';
 import sitesApi from './api/sites';
 import projectsApi from './api/projects';
 import generateApi from './api/generate';
+import seedApi from './api/seed';
 
 type Bindings = {
   DB: D1Database;
@@ -31,6 +32,7 @@ const protectedApp = new Hono<{ Bindings: Bindings }>();
 protectedApp.use('/*', async (c, next) => { return bearerAuth({ token: c.env.API_SECRET })(c, next); });
 protectedApp.route('/api/projects', projectsApi);
 protectedApp.route('/api/generate', generateApi);
+protectedApp.route('/api/generate', seedApi);
 
 app.route('/', protectedApp);
 
