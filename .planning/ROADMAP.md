@@ -74,7 +74,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Wave 0: uniqueIndex su pages(project_id, slug) + [BLOCKING] D1 push + test stub RED (seed.test.ts + prompts.test.ts) (completed 2026-04-26)
 - [x] 03-02-PLAN.md — Wave 1: PromptService 5 metodi + sanitizeHtml + seed.ts endpoint + loop service_zones + finishReason + upsert D1 (completed 2026-04-26)
-- [ ] 03-03-PLAN.md — Wave 2: scripts/seed-project.ts + smoke test E2E + checkpoint visivo conteggio pagine
+- [x] 03-03-PLAN.md — Wave 2: scripts/seed-project.ts + smoke test E2E + checkpoint visivo conteggio pagine
 
 ### Phase 4: Deploy Pipeline
 **Goal**: Submitting a project ID triggers the full automated pipeline: GitHub repo created from Astro template, config injected, Cloudflare Pages project created and linked — all without sleep hacks
