@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const renters = sqliteTable('renters', {
@@ -56,4 +56,6 @@ export const pages = sqliteTable('pages', {
   faq: text('faq').notNull().default('[]'),   // JSON string: [{ question, answer }]
   meta: text('meta').notNull().default('{}'), // JSON string: { description, canonical }
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+}, (table) => ({
+  projectSlugUniq: uniqueIndex('pages_project_slug_uniq').on(table.projectId, table.slug),
+}));
