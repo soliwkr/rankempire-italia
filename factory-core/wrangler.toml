@@ -14,5 +14,9 @@ id = "FACTORY_KV_ID"
 [vars]
 EMAIL_FROM = "Rankame <noreply@rankame.com>"
 VERIFICATION_BASE_URL = "https://factory-core.soliwkr.workers.dev/verify"
+GITHUB_TEMPLATE_OWNER = "StudioPuraLuce"
+GITHUB_TEMPLATE_REPO = "astro-rank-rent"
+FACTORY_API_URL = "https://factory-core.soliwkr.workers.dev"
 # RESEND_API_KEY is secret, set via .dev.vars or 'wrangler secret put'
 # API_SECRET is secret, set via .dev.vars or 'wrangler secret put'
+# CF_API_TOKEN is secret, set via .dev.vars or 'wrangler secret put'
