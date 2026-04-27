@@ -88,11 +88,11 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Schema D1: 3 colonne nullable su projects + migration SQL 0004 + wrangler.toml env vars (Wave 1)
-- [ ] 04-02-PLAN.md — Template Astro push su GitHub StudioPuraLuce/astro-rank-rent + abilitazione is_template (Wave 1, human-action)
-- [ ] 04-03-PLAN.md — GitHubService retry loop + CloudflarePagesService nuovo (Wave 1, parallel)
-- [ ] 04-04-PLAN.md — [BLOCKING] D1 migration apply locale + remote (Wave 2)
-- [ ] 04-05-PLAN.md — Deploy endpoint rewrite: state machine D1 + idempotency + site.config.json injection + Bindings index.ts (Wave 3)
+- [x] 04-01-PLAN.md — Schema D1: 3 colonne nullable su projects + migration SQL 0004 + wrangler.toml env vars (Wave 1)
+- [x] 04-02-PLAN.md — Template Astro push su GitHub StudioPuraLuce/astro-rank-rent + abilitazione is_template (Wave 1, human-action)
+- [x] 04-03-PLAN.md — GitHubService retry loop + CloudflarePagesService nuovo (Wave 1, parallel)
+- [x] 04-04-PLAN.md — [BLOCKING] D1 migration apply locale + remote (Wave 2)
+- [x] 04-05-PLAN.md — Deploy endpoint rewrite: state machine D1 + idempotency + site.config.json injection + Bindings index.ts (Wave 3)
 - [ ] 04-06-PLAN.md — Smoke test E2E + checkpoint visivo GitHub repo + CF Pages + idempotency 409 (Wave 4)
 
 ### Phase 5: Custom Domain Go-Live
@@ -170,7 +170,7 @@ Plans:
 | 1. Factory-Core Foundation | 4/4 | Complete | 2026-04-25 |
 | 2. Astro Template Completion | 0/5 | Not started | - |
 | 3. AI Content Generation | 0/3 | Not started | - |
-| 4. Deploy Pipeline | 0/6 | Not started | - |
+| 4. Deploy Pipeline | 5/6 | In Progress|  |
 | 5. Custom Domain Go-Live | 0/TBD | Not started | - |
 | 6. Lead Capture | 0/TBD | Not started | - |
 | 7. SEO & Tracking Automation | 0/TBD | Not started | - |

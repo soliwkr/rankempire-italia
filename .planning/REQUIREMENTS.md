@@ -9,11 +9,11 @@
 
 ### Factory Pipeline
 
-- [ ] **FACT-01**: L'operatore può creare un nuovo progetto specificando nicchia, città e zone target tramite wizard dashboard multi-step
+- [x] **FACT-01**: L'operatore può creare un nuovo progetto specificando nicchia, città e zone target tramite wizard dashboard multi-step
 - [ ] **FACT-02**: Il sistema genera ~105 pagine di contenuto SEO italiano tramite Gemini 2.5 Flash con copywriting avatar-based (in-pain, skeptic, bundler — Gary Halbert methodology)
-- [ ] **FACT-03**: Il sistema crea un nuovo repository GitHub dal template Astro per ogni progetto, senza sleep-hack (retry loop su GitHub API)
-- [ ] **FACT-04**: Il sistema deploya il sito su un nuovo progetto Cloudflare Pages collegato al repository GitHub dedicato
-- [ ] **FACT-05**: Il sistema inietta la config del sito (nicchia, città, zone, avatar, factory API URL) nel repo al momento del deploy
+- [x] **FACT-03**: Il sistema crea un nuovo repository GitHub dal template Astro per ogni progetto, senza sleep-hack (retry loop su GitHub API)
+- [x] **FACT-04**: Il sistema deploya il sito su un nuovo progetto Cloudflare Pages collegato al repository GitHub dedicato
+- [x] **FACT-05**: Il sistema inietta la config del sito (nicchia, città, zone, avatar, factory API URL) nel repo al momento del deploy
 - [x] **FACT-06
 **: Tutti gli endpoint factory-core non-pubblici richiedono autenticazione Bearer token
 
@@ -110,10 +110,10 @@
 | SITE-03 | Phase 2 | Pending |
 | SITE-04 | Phase 2 | Pending |
 | FACT-02 | Phase 3 | Pending |
-| FACT-01 | Phase 4 | Pending |
-| FACT-03 | Phase 4 | Pending |
-| FACT-04 | Phase 4 | Pending |
-| FACT-05 | Phase 4 | Pending |
+| FACT-01 | Phase 4 | Complete |
+| FACT-03 | Phase 4 | Complete |
+| FACT-04 | Phase 4 | Complete |
+| FACT-05 | Phase 4 | Complete |
 | SITE-05 | Phase 5 | Pending |
 | LEAD-01 | Phase 6 | Pending |
 | LEAD-02 | Phase 6 | Pending |
