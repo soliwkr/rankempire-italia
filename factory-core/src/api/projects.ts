@@ -167,7 +167,8 @@ api.post('/:id/deploy', async (c) => {
       c.env.FACTORY_API_URL
     );
 
-    const pagesUrl = `https://${(pagesResult as any).subdomain ?? `rr-${project.slug}`}.pages.dev`;
+    const subdomain = (pagesResult as any).subdomain ?? `rr-${project.slug}`;
+    const pagesUrl = subdomain.includes('.pages.dev') ? `https://${subdomain}` : `https://${subdomain}.pages.dev`;
     const pagesProjectName = (pagesResult as any).name ?? `rr-${project.slug}`;
 
     await db.update(projects)
