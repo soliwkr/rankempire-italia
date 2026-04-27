@@ -12,6 +12,10 @@ type Bindings = {
   GITHUB_TOKEN: string;
   GOOGLE_AI_API_KEY: string;
   CF_ACCOUNT_ID: string;
+  GITHUB_TEMPLATE_OWNER: string;
+  GITHUB_TEMPLATE_REPO: string;
+  CF_API_TOKEN: string;
+  FACTORY_API_URL: string;
   CF_AI_GATEWAY_NAME: string;
   CF_AI_GATEWAY_TOKEN: string;
   EMAIL_FROM: string;
