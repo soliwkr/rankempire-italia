@@ -20,6 +20,9 @@ export const projects = sqliteTable('projects', {
   status: text('status').default('pending').notNull(),
   renterId: text('renter_id').references(() => renters.id),
   configJson: text('config_json'),
+  githubRepoUrl: text('github_repo_url'),
+  pagesProjectName: text('pages_project_name'),
+  pagesUrl: text('pages_url'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
