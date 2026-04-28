@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-04-27T07:26:50.752Z"
-last_activity: 2026-04-27
+stopped_at: Phase 4 smoke test completed
+last_updated: "2026-04-28T10:00:00.000Z"
+last_activity: 2026-04-28
 progress:
   total_phases: 10
-  completed_phases: 2
-  total_plans: 14
-  completed_plans: 17
-  percent: 100
+  completed_phases: 4
+  total_plans: 18
+  completed_plans: 18
+  percent: 40
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-24)
 
 **Core value:** Un sistema che trasforma nicchia + città in un sito live che raccoglie lead in meno di 1 ora — costo marginale vicino a zero per ogni sito aggiuntivo.
-**Current focus:** Phase 03 — ai-content-generation
+**Current focus:** Phase 05 — custom-domain-go-live
 
 ## Current Position
 
-Phase: 4
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-04-27
+Phase: 5
+Plan: 0 of TBD
+Status: Ready to plan
+Last activity: 2026-04-28
 
-Progress: [██████████] 100%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
+- Total plans completed: 18
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -44,12 +44,15 @@ Progress: [██████████] 100%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
+| 01 | 4 | - | - |
+| 02 | 5 | - | - |
 | 03 | 3 | - | - |
+| 04 | 6 | - | - |
 
 **Recent Trend:** No data yet
 
 *Updated after each plan completion*
-| Phase 01-factory-core-foundation P03 | 7 | 2 tasks | 3 files |
+| Phase 04-deploy-pipeline | 6 | 6 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -65,6 +68,7 @@ Recent decisions affecting current work:
 - Init: VERIFICATION_BASE_URL points to localhost in wrangler.toml — fix in Phase 1
 - TypeScript verificato via wrangler deploy --dry-run (exit 0) invece di tsc --noEmit — TypeScript non e' dipendenza diretta dei factory-core Workers
 - Piano 03: commit schema.ts e leads.ts mancanti nel repo rankame recuperati durante applicazione migration
+- Piano 04: GitHubService retry loop per attendere che il repo creato da template sia pronto prima di iniettare config
 
 ### Pending Todos
 
@@ -89,7 +93,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-27T07:26:50.740Z
-Stopped at: Phase 4 context gathered
+Last session: 2026-04-27
+Stopped at: Phase 4 smoke test completed
 Resume file: None
-Next: 03-03-PLAN.md (Wave 2 — scripts/seed-project.ts + E2E smoke test + visual checkpoint)
+Next: Phase 5 - Custom Domain Go-Live

@@ -12,8 +12,8 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 
 - [x] **Phase 1: Factory-Core Foundation** - Fix auth, Gemini models, D1 schema, and env config so the backend is safe and functional (completed 2026-04-25)
 - [x] **Phase 2: Astro Template Completion** - Full routing, schema.org markup, sitemap, and D1 data fetching replacing Directus (completed 2026-04-25)
-- [ ] **Phase 3: AI Content Generation** - 105-page programmatic content via Gemini 2.5 Flash with avatar-based copywriting
-- [ ] **Phase 4: Deploy Pipeline** - Wizard backend triggers GitHub repo creation, Cloudflare Pages deploy, and config injection
+- [x] **Phase 3: AI Content Generation** - 105-page programmatic content via Gemini 2.5 Flash with avatar-based copywriting (completed 2026-04-26)
+- [x] **Phase 4: Deploy Pipeline** - Wizard backend triggers GitHub repo creation, Cloudflare Pages deploy, and config injection (completed 2026-04-27)
 - [ ] **Phase 5: Custom Domain Go-Live** - Each deployed site gets its own custom domain on Cloudflare Pages
 - [ ] **Phase 6: Lead Capture** - GDPR-compliant DOI form, D1 write, Resend verification, avatar tagging, Telegram notification
 - [ ] **Phase 7: SEO & Tracking Automation** - GA4 auto-create, GSC verify + sitemap submit, SERP cron, Telegram drop alert
@@ -33,7 +33,7 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
   3. AI calls in factory-core use `gemini-2.5-flash` and receive a valid JSON response from Cloudflare AI Gateway
   4. The `leads` D1 table has an `email` column and migrations apply cleanly
   5. `VERIFICATION_BASE_URL` in wrangler.toml is set to the production Worker URL, not localhost
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 01-01-PLAN.md — Schema D1 email: aggiungere colonna email a schema.ts + db.insert in entrambi i factory-core
@@ -74,7 +74,7 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — Wave 0: uniqueIndex su pages(project_id, slug) + [BLOCKING] D1 push + test stub RED (seed.test.ts + prompts.test.ts) (completed 2026-04-26)
 - [x] 03-02-PLAN.md — Wave 1: PromptService 5 metodi + sanitizeHtml + seed.ts endpoint + loop service_zones + finishReason + upsert D1 (completed 2026-04-26)
-- [x] 03-03-PLAN.md — Wave 2: scripts/seed-project.ts + smoke test E2E + checkpoint visivo conteggio pagine
+- [x] 03-03-PLAN.md — Wave 2: scripts/seed-project.ts + smoke test E2E + checkpoint visivo conteggio pagine (completed 2026-04-26)
 
 ### Phase 4: Deploy Pipeline
 **Goal**: Submitting a project ID triggers the full automated pipeline: GitHub repo created from Astro template, config injected, Cloudflare Pages project created and linked — all without sleep hacks
@@ -88,12 +88,12 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [x] 04-01-PLAN.md — Schema D1: 3 colonne nullable su projects + migration SQL 0004 + wrangler.toml env vars (Wave 1)
-- [x] 04-02-PLAN.md — Template Astro push su GitHub StudioPuraLuce/astro-rank-rent + abilitazione is_template (Wave 1, human-action)
-- [x] 04-03-PLAN.md — GitHubService retry loop + CloudflarePagesService nuovo (Wave 1, parallel)
-- [x] 04-04-PLAN.md — [BLOCKING] D1 migration apply locale + remote (Wave 2)
-- [x] 04-05-PLAN.md — Deploy endpoint rewrite: state machine D1 + idempotency + site.config.json injection + Bindings index.ts (Wave 3)
-- [ ] 04-06-PLAN.md — Smoke test E2E + checkpoint visivo GitHub repo + CF Pages + idempotency 409 (Wave 4)
+- [x] 04-01-PLAN.md — Schema D1: 3 colonne nullable su projects + migration SQL 0004 + wrangler.toml env vars (Wave 1) (completed 2026-04-26)
+- [x] 04-02-PLAN.md — Template Astro push su GitHub StudioPuraLuce/astro-rank-rent + abilitazione is_template (Wave 1, human-action) (completed 2026-04-26)
+- [x] 04-03-PLAN.md — GitHubService retry loop + CloudflarePagesService nuovo (Wave 1, parallel) (completed 2026-04-27)
+- [x] 04-04-PLAN.md — [BLOCKING] D1 migration apply locale + remote (Wave 2) (completed 2026-04-27)
+- [x] 04-05-PLAN.md — Deploy endpoint rewrite: state machine D1 + idempotency + site.config.json injection + Bindings index.ts (Wave 3) (completed 2026-04-27)
+- [x] 04-06-PLAN.md — Smoke test E2E + checkpoint visivo GitHub repo + CF Pages + idempotency 409 (Wave 4) (completed 2026-04-27)
 
 ### Phase 5: Custom Domain Go-Live
 **Goal**: Each deployed rank-rent site is accessible via its own custom domain (e.g., `idraulicoformia.it`) configured on Cloudflare Pages
@@ -168,9 +168,9 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Factory-Core Foundation | 4/4 | Complete | 2026-04-25 |
-| 2. Astro Template Completion | 0/5 | Not started | - |
-| 3. AI Content Generation | 0/3 | Not started | - |
-| 4. Deploy Pipeline | 5/6 | In Progress|  |
+| 2. Astro Template Completion | 5/5 | Complete | 2026-04-25 |
+| 3. AI Content Generation | 3/3 | Complete | 2026-04-26 |
+| 4. Deploy Pipeline | 6/6 | Complete | 2026-04-27 |
 | 5. Custom Domain Go-Live | 0/TBD | Not started | - |
 | 6. Lead Capture | 0/TBD | Not started | - |
 | 7. SEO & Tracking Automation | 0/TBD | Not started | - |

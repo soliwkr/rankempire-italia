@@ -9,20 +9,19 @@
 
 ### Factory Pipeline
 
-- [x] **FACT-01**: L'operatore può creare un nuovo progetto specificando nicchia, città e zone target tramite wizard dashboard multi-step
-- [ ] **FACT-02**: Il sistema genera ~105 pagine di contenuto SEO italiano tramite Gemini 2.5 Flash con copywriting avatar-based (in-pain, skeptic, bundler — Gary Halbert methodology)
-- [x] **FACT-03**: Il sistema crea un nuovo repository GitHub dal template Astro per ogni progetto, senza sleep-hack (retry loop su GitHub API)
-- [x] **FACT-04**: Il sistema deploya il sito su un nuovo progetto Cloudflare Pages collegato al repository GitHub dedicato
-- [x] **FACT-05**: Il sistema inietta la config del sito (nicchia, città, zone, avatar, factory API URL) nel repo al momento del deploy
-- [x] **FACT-06
-**: Tutti gli endpoint factory-core non-pubblici richiedono autenticazione Bearer token
+- [x] **FACT-01**: L'operatore può creare un nuovo progetto specificando nicchia, città e zone target tramite wizard dashboard multi-step (completed Phase 4)
+- [x] **FACT-02**: Il sistema genera ~105 pagine di contenuto SEO italiano tramite Gemini 2.5 Flash con copywriting avatar-based (in-pain, skeptic, bundler — Gary Halbert methodology) (completed Phase 3)
+- [x] **FACT-03**: Il sistema crea un nuovo repository GitHub dal template Astro per ogni progetto, senza sleep-hack (retry loop su GitHub API) (completed Phase 4)
+- [x] **FACT-04**: Il sistema deploya il sito su un nuovo progetto Cloudflare Pages collegato al repository GitHub dedicato (completed Phase 4)
+- [x] **FACT-05**: Il sistema inietta la config del sito (nicchia, città, zone, avatar, factory API URL) nel repo al momento del deploy (completed Phase 4)
+- [x] **FACT-06**: Tutti gli endpoint factory-core non-pubblici richiedono autenticazione Bearer token (completed Phase 1)
 
 ### Siti Deployati
 
-- [ ] **SITE-01**: Ogni sito ha routing Astro completo: homepage, pagine servizio, pagine zona, pagine programmatiche servizio×zona (~72 pagine), blog
-- [ ] **SITE-02**: Ogni sito include structured data schema.org LocalBusiness + FAQPage
-- [ ] **SITE-03**: Ogni sito genera automaticamente sitemap.xml e robots.txt al build
-- [ ] **SITE-04**: Ogni sito fetcha il contenuto da factory-core Worker D1 al build time (zero dipendenza da Directus o VPS)
+- [x] **SITE-01**: Ogni sito ha routing Astro completo: homepage, pagine servizio, pagine zona, pagine programmatiche servizio×zona (~72 pagine), blog (completed Phase 2)
+- [x] **SITE-02**: Ogni sito include structured data schema.org LocalBusiness + FAQPage (completed Phase 2)
+- [x] **SITE-03**: Ogni sito genera automaticamente sitemap.xml e robots.txt al build (completed Phase 2)
+- [x] **SITE-04**: Ogni sito fetcha il contenuto da factory-core Worker D1 al build time (zero dipendenza da Directus o VPS) (completed Phase 2)
 - [ ] **SITE-05**: Ogni sito è configurato con il proprio dominio custom (es. `idraulicoformia.it`) su Cloudflare Pages
 
 ### Lead Capture
@@ -104,12 +103,12 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FACT-06 | Phase 1 | Pending |
-| SITE-01 | Phase 2 | Pending |
-| SITE-02 | Phase 2 | Pending |
-| SITE-03 | Phase 2 | Pending |
-| SITE-04 | Phase 2 | Pending |
-| FACT-02 | Phase 3 | Pending |
+| FACT-06 | Phase 1 | Complete |
+| SITE-01 | Phase 2 | Complete |
+| SITE-02 | Phase 2 | Complete |
+| SITE-03 | Phase 2 | Complete |
+| SITE-04 | Phase 2 | Complete |
+| FACT-02 | Phase 3 | Complete |
 | FACT-01 | Phase 4 | Complete |
 | FACT-03 | Phase 4 | Complete |
 | FACT-04 | Phase 4 | Complete |
@@ -141,4 +140,4 @@
 
 ---
 *Requirements defined: 2026-04-24*
-*Last updated: 2026-04-24 after roadmap creation — all 29 v1 requirements mapped*
+*Last updated: 2026-04-28 (Phase 4 complete)*

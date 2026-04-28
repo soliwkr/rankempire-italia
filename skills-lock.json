@@ -1,0 +1,370 @@
+{
+  "version": 1,
+  "skills": {
+    "ad-copy-generation": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "4f42aa15f166e3836e68ccebbbfb6cf0b886c63eee0151da0dcd4be944fdba43"
+    },
+    "adversarial-resilience": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "6bc21d759c04c02577bdfb29c3f0f0cf8dde80538140f8d3f8f433477ca1d2cc"
+    },
+    "agent-instinct-system": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "fcd973f48fc25bcd9716d3afc02798805c8b7c08f98ba2a880e0916fd41485a9"
+    },
+    "agent-security-scanning": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a910c28e020431b0d1e18da438edc5b9e47b947598f56838b3fd81b2797ca977"
+    },
+    "ai-chat-studio": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "6f8c0bb5d909867d7260c5faa1e21c708f439e286c1907d16e8f984e8fb9ff1e"
+    },
+    "anthropic-tool-mastery": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "4a1d7cdee8ce867ea14e862d7da16ee4b8354bfe7fdf42f5160287dc12543601"
+    },
+    "assistant-presets": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "2d56e3fb33199867361e10a5bb2ea5d54c324615a806d8b21b6c088f5709d2e7"
+    },
+    "audience-targeting": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "fd1a22843af88900d5085a71fc29db97b51fa9743e80da9792ddfa105b0cf916"
+    },
+    "batch-processing": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "4f6d37134cbd02b7c3543ed8e5f40d62e86d4eff56544c2b88e53d7ec50a719d"
+    },
+    "bioinformatics": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "692130c914733195dfceb1116e8cc8ea6dd310b6857612326d5e6e6782df67c2"
+    },
+    "brainstorming": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "7da1c5424b15447d622ef5e5185416addfa9356be11cfa478ff85754ef062e8c"
+    },
+    "budget-optimization": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "926530b2467370202789ab628c42843e1fcf02197c7038f48c5d1a0bd773068f"
+    },
+    "cheminformatics": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9f96c04e34871585f1dbbb3ad4e41d32b709a4318aa350fcc9ba52d70c4fbc7e"
+    },
+    "ci-cd-pipelines": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "3a04f220367a53cd71ea1624db6444887b5c693c61937e219805cd9b4e876146"
+    },
+    "cloudflare-workers": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "7a967aab36520b79138298a2e3a501da1daf78220326e436b31900eceee880f1"
+    },
+    "code-review": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "63fa31242f10d28c06032bda977bea92a3d98decf67543bd50697ac3c554eca1"
+    },
+    "codeql-semgrep": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "0bb2a2df066c86324663420c7734e8a088a9ea6e6becf94c4ba9588eb4963172"
+    },
+    "cognitive-scaffolding": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "c2ce82b86c077c4fb1a6d74a4d082cfe33637d39431322f7783d8b363423ae16"
+    },
+    "competitor-analysis": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "e1aa1b20c88949257cf911dc24f6a1c79f5a168c2207510e5133f2c4badc9b64"
+    },
+    "composition-patterns": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "00772d2aa8780a0c2ad3cfd79376f3a38cdd02b233d3cd73d5430bdb7a7e88c8"
+    },
+    "configuration-management": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "d0b3c0dc84d6a60c0712965792ff0194e4aed46e6b1f6ec210a9f66e9a834c0c"
+    },
+    "context-engineering": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "f62c817977d30c54688a7ac6856abad39a42c4bc0d696fbabec7e710be53e667"
+    },
+    "continuous-learning": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "c3735278e37d2fc888bcacb9a96983d2adf921c162445b7bd71270a0ca043728"
+    },
+    "conversion-tracking": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "4cbfb321b1bee4ae76850457a679544aedf465959ac57ae19657314a1c50095e"
+    },
+    "data-analysis": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "c265d3f719be84ce0c05c4710af0736b80e39e23c4a923842d202e42e362f0eb"
+    },
+    "database-lookup": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "27725902646e8545d3e57d1189b9593381413addf269242c4a322f9b88b6b0bc"
+    },
+    "edge-deployment": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "e679fcde37e1cd803bd065f5adbe8d7ef8b93f75211c72262964411ac015a2e8"
+    },
+    "edge-rendering": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "6403492c48a4064ee7f73d46c3f839b72cc2ea7747b97fc1cff83cb068610b39"
+    },
+    "entity-memory-management": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5ff27868799157ec22fd0f3aae90ee39076de18104dae508d822de337301b9eb"
+    },
+    "executing-plans": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "96017f9aaa063c4f2806369501107f881de0c58f6c11c33337b7ab6c2a613bcc"
+    },
+    "geospatial-analysis": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "39dfa5cf06d257ecc87cda017e6d746ef87d124b50503ca5828b2fb533907ba5"
+    },
+    "git-worktrees": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "0366f9f13e3dce6d2aef0f3142693bfa701a8d1178c06b2c2ceadd532c0a67a4"
+    },
+    "google-ads-audit": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "33e3b53fa2d252cd6bb188a33b663b1483b493b23d1c35cc660e037ef2f6b07a"
+    },
+    "keyword-research": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "756d7ee381dadb088484c0814539e41a597a14585f75d3cd99f72aa1b73a4696"
+    },
+    "knowledge-base-injection": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "b8b53538a57122b0a1097549403972abbd1a50460222f57c896404826d923be9"
+    },
+    "knowledge-base-rag": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "b7c205150a27bb96b1be095ea7c2456af7d13d5c5c730b8e414d7329d6c8d48e"
+    },
+    "landing-page-audit": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "fb2e47ab1fac194c9d4b24b7041e22ce08ebe0eb8b3ade91b6e54efaec1d22b6"
+    },
+    "long-horizon-workflows": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "df41d8eaabc63dca82b859f272efb76c1d45526aa9f34e71cfd925c9f4794415"
+    },
+    "low-code-generation": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "620ad87c90b5a302e66435b43c5ed09b5d63d96cf80370baa090a8ce2d5e2bac"
+    },
+    "machine-learning": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5a64007a217324e2e463ebd4c27cf6cc09634b2f576472c1e3ce8f46786c8785"
+    },
+    "mcp-server-creation": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "b2007b14af521ee45720330b7e5a1d5d53c3696913011b5b0c713611ba7d2678"
+    },
+    "memory-persistence": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "bef5797c2bf0096cced54ec4bd9c027594ee8f9706e9472e6dd79cf8f62f37be"
+    },
+    "ml-model-integration": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "957c792fa0b2d31ceb431eb16812885d0dea102655c0d5ec00b9d49bac183210"
+    },
+    "multi-harness-portability": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "fbb35f49c3e9a81c36a775a39d0e0544941cbdc9fcf77f7102d5f1396d1aba8b"
+    },
+    "multi-model-routing": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "ddfb7d3a30e851e366f8ed4f9fba40d559d31f14392d20e44ff680cd819fa3e1"
+    },
+    "observability": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "e6eee55ec930e5f09ab2b868353d60a03316db247e681e208c42401569451816"
+    },
+    "parallel-agent-orchestration": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "eeace3925115a63c83869ca80cde1c36799aeada76f93fa7fea82ce9d9c694e0"
+    },
+    "pmax-optimization": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "459a679f3bbdd9b14aa450291441af44c2890c6ce7532c452822ceb5a42650f9"
+    },
+    "proactive-intelligence": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "874be937ec2b8a97f12a3366dbb86a9d214452c70f0c76339c2a248b60fee4d3"
+    },
+    "programmatic-video": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "3ec4d031daee900de0b252bf50dbb08884ab2f10b7c56bfa96cdf27d2ada14db"
+    },
+    "prompt-architecture": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "5fd720a665d0edf9baba337d81adead00b19a1fa3a105e3400f46bcfe07498ab"
+    },
+    "quality-score-optimization": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "aa34265f347660ec3378240bfe490ba09965ed5ba9ef08d8eb8f7379af6e621d"
+    },
+    "react-best-practices": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "36c2e66fc543253fef0378f2f1fcf5b6ceafc0d79b567d922cb23503203ecdda"
+    },
+    "react-native-guidelines": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a5f5fe2d7b7a8dd3f703d0e2da26897be6813e3aa66938a9bb457cadbd86b8eb"
+    },
+    "remarketing-strategy": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "118d1a0a88779f5759203d67882adae596e33c887782a0c6ba4b0899135194ba"
+    },
+    "research-methodology": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "ff6244ba3fca2409a90b3e7f62889933e73f7fd3e5b14871281b1568901cbe1d"
+    },
+    "sandbox-hardening": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "af505cc1bee2f6a9418edcbe574ba2721d627ebb174136ed66d1d6676329bf11"
+    },
+    "scientific-writing": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "bc1511528dc3bf19e6acbb48b838c84ab9684521f2b68dbe419a2f30772fc08f"
+    },
+    "secret-protection": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "086639f0758f8dea59356d2cec0b8e84e4babef5ab8db3659e3b1ec9b8b43be1"
+    },
+    "self-healing-agents": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "7749561a19b1d9994517bcbb2db89065b6dcbde7672c8ad4b0f0b6d2d5eecfb7"
+    },
+    "service-discovery": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "853116e4dfbae54939d2897ace1301bec4b63b8a663af2e365d9ccfb3ca13d32"
+    },
+    "session-archaeology": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "8cf345e2a8da521879c48a69d334628099c816a0b1c0e534ff9ebae85ce26f87"
+    },
+    "shopping-ads": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "794057787a179ebb180c26afe59de19b67edcdbe83476d31d6f9fe0c23c770bd"
+    },
+    "subagent-driven-development": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "c2f4d42636735418e2b632469e8c2cffd9ef9566d6ed8d1c675419ce2d19d902"
+    },
+    "systematic-debugging": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "6c50c2b969494db1e1b697a11be8a6cdc767efcb796b0853ebf8ba8e8b16abb6"
+    },
+    "test-driven-development": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "55c62a1e869a3ff01322bb9afbab23a2b2ccd23870b77e1e952dc85b9aea36e5"
+    },
+    "token-optimization": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "531a10fbfe3af5091d77d9beb960717cce739ed4a06f4a6a04e7e651e5e01012"
+    },
+    "verification-loops": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "be8f04052e5a8ad6421ca69d66d991fa902d7b66f7122b852bc7bf475a88bfc5"
+    },
+    "view-transitions": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "7fb4ee4f4b86efc62622175cbacf98ab22097e568c682d7944cffeb5f5a779a8"
+    },
+    "web-asset-generation": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "faf128d59c001d0018f710ccf0a021afe5d9b754d0f1775af1834892d6b74011"
+    },
+    "web-design-guidelines": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "60d518082be9742009badb019af3d2adb1487a116f400a7368fe0fd7d11d875f"
+    },
+    "workflow-orchestration": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "424edd66650e2bb1449de6e2e3ed653004bcf01a649dc05f2a611d8cafcc3b27"
+    },
+    "writing-plans": {
+      "source": "itallstartedwithaidea/agent-skills",
+      "sourceType": "github",
+      "computedHash": "f3497b441f5a78be3de85bf35b62ef49e51ecd7a28e0af7d4da129b8bf8cb368"
+    }
+  }
+}
