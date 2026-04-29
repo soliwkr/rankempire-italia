@@ -9,6 +9,7 @@ import generateApi from './api/generate';
 import seedApi from './api/seed';
 import { renterAuth } from './middleware/renter-auth';
 import renterProjectsApi from './api/renter/projects';
+import renterPagesApi from './api/renter/pages';
 
 type Bindings = {
   DB: D1Database;
@@ -41,6 +42,7 @@ app.route('/api/sites', sitesApi); // Contenuto siti: pubblico per design (SEO, 
 const renterApp = new Hono<{ Bindings: Bindings }>();
 renterApp.use('/*', renterAuth);
 renterApp.route('/projects', renterProjectsApi);
+renterApp.route('/pages', renterPagesApi);
 
 app.route('/api/renter', renterApp);
 
