@@ -23,6 +23,8 @@ export const projects = sqliteTable('projects', {
   githubRepoUrl: text('github_repo_url'),
   pagesProjectName: text('pages_project_name'),
   pagesUrl: text('pages_url'),
+  ga4MeasurementId: text('ga4_measurement_id'),
+  gscSiteUrl: text('gsc_site_url'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
