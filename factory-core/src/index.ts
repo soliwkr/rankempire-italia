@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
 import { bearerAuth } from 'hono/bearer-auth';
+import authApi from './api/auth';
 import leadsApi from './api/leads';
 import sitesApi from './api/sites';
 import projectsApi from './api/projects';
 import dashboardApi from './api/dashboard';
 import generateApi from './api/generate';
 import seedApi from './api/seed';
+import { renterAuth } from './middleware/renter-auth';
 
 type Bindings = {
   DB: D1Database;
@@ -22,6 +24,7 @@ type Bindings = {
   EMAIL_FROM: string;
   RESEND_API_KEY: string;
   API_SECRET: string;
+  JWT_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -29,10 +32,19 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.get('/health', (c) => c.text('OK'));
 
 // Endpoint pubblici — nessun auth richiesto
+app.route('/api/auth', authApi);
 app.route('/api/leads', leadsApi);
 app.route('/api/sites', sitesApi); // Contenuto siti: pubblico per design (SEO, fetch Astro build time)
 
-// Endpoint protetti — Bearer token richiesto
+// Area Renter — Autenticazione basata su JWT
+const renterApp = new Hono<{ Bindings: Bindings }>();
+renterApp.use('/*', renterAuth);
+// TODO: Aggiungere rotte specifiche per i renter qui
+// renterApp.route('/projects', renterProjectsApi);
+
+app.route('/api/renter', renterApp);
+
+// Endpoint protetti Factory (Master Admin) — Bearer token statico richiesto
 const protectedApp = new Hono<{ Bindings: Bindings }>();
 protectedApp.use('/*', async (c, next) => { return bearerAuth({ token: c.env.API_SECRET })(c, next); });
 protectedApp.route('/api/dashboard', dashboardApi);
