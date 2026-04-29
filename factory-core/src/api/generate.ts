@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { AiService } from '../services/ai';
 import { PromptService, type AvatarType } from '../services/prompts';
+import { BatchGenerator } from '../services/batch-generator';
 
 type Bindings = {
   DB: D1Database;
@@ -11,6 +12,43 @@ type Bindings = {
 };
 
 const api = new Hono<{ Bindings: Bindings }>();
+
+api.post('/batch/:projectId', async (c) => {
+  const projectId = c.req.param('projectId');
+  const body = await c.req.json();
+  const { services, zones, avatar, includeBlog } = body;
+
+  if (!services || !zones) {
+    return c.json({ error: 'Missing required fields: services, zones' }, 400);
+  }
+
+  const generator = new BatchGenerator(c.env.DB, {
+    GOOGLE_AI_API_KEY: c.env.GOOGLE_AI_API_KEY,
+    CF_ACCOUNT_ID: c.env.CF_ACCOUNT_ID,
+    CF_AI_GATEWAY_NAME: c.env.CF_AI_GATEWAY_NAME,
+    CF_AI_GATEWAY_TOKEN: c.env.CF_AI_GATEWAY_TOKEN,
+  });
+
+  try {
+    const results = await generator.generateAll(projectId, {
+      services,
+      zones,
+      avatar,
+      includeBlog
+    });
+
+    return c.json({
+      success: true,
+      data: results
+    });
+  } catch (err: any) {
+    console.error('Batch Generation Error:', err);
+    return c.json({ 
+      error: 'Failed to generate batch content', 
+      details: err.message 
+    }, 500);
+  }
+});
 
 api.post('/content', async (c) => {
   const body = await c.req.json();
