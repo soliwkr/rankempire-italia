@@ -33,8 +33,9 @@ api.get('/', async (c) => {
   const db = drizzle(c.env.DB);
   const limit = Math.min(Number(c.req.query('limit') ?? 20), 100);
   const projectSlug = c.req.query('project_slug');
+  const status = c.req.query('status');
 
-  const baseQuery = db
+  let query = db
     .select({
       id: leads.id,
       name: leads.name,
@@ -52,11 +53,44 @@ api.get('/', async (c) => {
     .orderBy(desc(leads.createdAt))
     .limit(limit);
 
-  const rows = projectSlug
-    ? await baseQuery.where(eq(projects.slug, projectSlug)).all()
-    : await baseQuery.all();
+  if (projectSlug) {
+    // @ts-ignore
+    query = query.where(eq(projects.slug, projectSlug));
+  }
 
+  if (status) {
+    // @ts-ignore
+    query = query.where(eq(leads.status, status));
+  }
+
+  const rows = await query.all();
   return c.json(rows);
+});
+
+api.patch('/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  
+  const patchSchema = z.object({
+    status: z.enum(['new', 'pending', 'active', 'trash', 'converted']),
+  });
+
+  const validation = patchSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ success: false, errors: validation.error.errors }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  const result = await db.update(leads)
+    .set({ status: validation.data.status })
+    .where(eq(leads.id, id))
+    .run();
+
+  if (result.meta.changes === 0) {
+    return c.json({ success: false, message: 'Lead not found' }, 404);
+  }
+
+  return c.json({ success: true });
 });
 
 api.post('/', async (c) => {
