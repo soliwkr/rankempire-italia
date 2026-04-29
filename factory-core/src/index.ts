@@ -3,6 +3,7 @@ import { bearerAuth } from 'hono/bearer-auth';
 import leadsApi from './api/leads';
 import sitesApi from './api/sites';
 import projectsApi from './api/projects';
+import dashboardApi from './api/dashboard';
 import generateApi from './api/generate';
 import seedApi from './api/seed';
 
@@ -34,6 +35,7 @@ app.route('/api/sites', sitesApi); // Contenuto siti: pubblico per design (SEO, 
 // Endpoint protetti — Bearer token richiesto
 const protectedApp = new Hono<{ Bindings: Bindings }>();
 protectedApp.use('/*', async (c, next) => { return bearerAuth({ token: c.env.API_SECRET })(c, next); });
+protectedApp.route('/api/dashboard', dashboardApi);
 protectedApp.route('/api/projects', projectsApi);
 protectedApp.route('/api/generate', generateApi);
 protectedApp.route('/api/generate', seedApi);
