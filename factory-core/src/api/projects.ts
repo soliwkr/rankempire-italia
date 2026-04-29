@@ -321,4 +321,32 @@ api.post('/:id/domain', async (c) => {
   }
 });
 
+api.patch('/:id', async (c) => {
+  const db = drizzle(c.env.DB);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+
+  const project = await db.select().from(projects).where(eq(projects.id, id)).get();
+  if (!project) {
+    return c.json({ error: 'Project not found' }, 404);
+  }
+
+  const updateData: Partial<typeof projects.$inferInsert> = {};
+  
+  if (body.status) updateData.status = body.status;
+  if (body.renterId !== undefined) updateData.renterId = body.renterId;
+  if (body.name) updateData.name = body.name;
+  if (body.domain) updateData.domain = body.domain;
+
+  if (Object.keys(updateData).length === 0) {
+    return c.json({ error: 'No fields to update' }, 400);
+  }
+
+  await db.update(projects)
+    .set(updateData)
+    .where(eq(projects.id, id));
+
+  return c.json({ success: true, updated: Object.keys(updateData) });
+});
+
 export default api;
