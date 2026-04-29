@@ -30,6 +30,7 @@ describe('Dashboard Core API', () => {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
+      groupBy: vi.fn().mockReturnThis(),
       all: vi.fn(),
       get: vi.fn(),
       update: vi.fn().mockReturnThis(),
@@ -40,10 +41,19 @@ describe('Dashboard Core API', () => {
   });
 
   describe('GET /api/dashboard/stats', () => {
-    it('should return aggregated stats', async () => {
+    it('should return aggregated stats with granular distributions', async () => {
       mockDb.all
-        .mockResolvedValueOnce([{ value: 10 }]) // projects count
-        .mockResolvedValueOnce([{ value: 50 }]); // leads count
+        .mockResolvedValueOnce([{ value: 10 }]) // total projects count
+        .mockResolvedValueOnce([{ value: 50 }]) // total leads count
+        .mockResolvedValueOnce([
+          { status: 'pending', count: 6 },
+          { status: 'live', count: 4 }
+        ]) // projectStatusStats
+        .mockResolvedValueOnce([
+          { status: 'new', count: 30 },
+          { status: 'active', count: 20 }
+        ]) // leadStatusStats
+        .mockResolvedValueOnce([{ value: 25 }]); // verifiedLeads count (for conversion ratio)
 
       const res = await dashboardApi.request('/stats', {
         method: 'GET',
@@ -53,6 +63,15 @@ describe('Dashboard Core API', () => {
       const body = await res.json();
       expect(body.totalProjects).toBe(10);
       expect(body.totalLeads).toBe(50);
+      expect(body.projectStatusDistribution).toEqual({
+        pending: 6,
+        live: 4
+      });
+      expect(body.leadStatusDistribution).toEqual({
+        new: 30,
+        active: 20
+      });
+      expect(body.conversionRatio).toBe("0.50");
       expect(body.timestamp).toBeDefined();
     });
 
