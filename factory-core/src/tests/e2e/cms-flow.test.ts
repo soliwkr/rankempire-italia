@@ -25,6 +25,8 @@ describe('CMS Flow E2E Verification', () => {
     returning: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
+    onConflictDoUpdate: vi.fn().mockReturnThis(),
+    run: vi.fn(),
   };
 
   const ENV = {
@@ -94,5 +96,94 @@ describe('CMS Flow E2E Verification', () => {
     expect(publicData.pages).toHaveLength(1);
     expect(publicData.pages[0].title).toBe('Updated Title');
     expect(publicData.pages[0].body).toContain(media.url);
+  });
+
+  it('validates batch generation and specific slug lookups', async () => {
+    // 1. Simulate Batch Generation
+    mockDb.get.mockResolvedValueOnce({ 
+      id: projectId, 
+      niche: 'Plumbing', 
+      location: 'Milan' 
+    }); // Project lookup in BatchGenerator.generateAll
+
+    // Mock successful fetch for callGemini (homepage)
+    const mockPages = [
+      { slug: 'home', type: 'homepage', title: 'Home', body: 'Body', faq: [], meta: {} }
+    ];
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        candidates: [{
+          content: { parts: [{ text: JSON.stringify(mockPages) }] },
+          finishReason: 'STOP'
+        }]
+      })
+    } as any);
+
+    const batchRes = await app.request(`/api/generate/batch/${projectId}`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer test-secret'
+      },
+      body: JSON.stringify({
+        services: [], // Keep it simple to only trigger homepage
+        zones: []
+      }),
+    }, { ...ENV, GOOGLE_AI_API_KEY: 'test-key', API_SECRET: 'test-secret' });
+
+    expect(batchRes.status).toBe(200);
+    const batchData = await batchRes.json() as any;
+    expect(batchData.success).toBe(true);
+    expect(batchData.data.homepage).toBe(1);
+
+    // 2. Specific Slug Lookup (SSR style)
+    mockDb.all.mockResolvedValueOnce([
+      { 
+        id: 'p2', 
+        slug: 'service-a-city-b', 
+        title: 'Service A in City B',
+        projectId
+      }
+    ]);
+
+    const slugRes = await app.request(`/api/sites/${projectId}/pages?slug=service-a-city-b`, {}, ENV);
+    expect(slugRes.status).toBe(200);
+    const slugData = await slugRes.json() as any;
+    expect(slugData.pages).toBeDefined();
+  });
+
+  it('ensures public API does not leak sensitive renter data', async () => {
+    mockDb.all.mockResolvedValueOnce([
+      { 
+        id: pageId, 
+        projectId, 
+        slug: 'public-slug',
+        type: 'service',
+        title: 'Public Title', 
+        body: 'Public Body',
+        faq: '[]',
+        meta: '{}',
+        createdAt: new Date().toISOString()
+      }
+    ]);
+
+    const res = await app.request(`/api/sites/${projectId}/pages`, {}, ENV);
+    const data = await res.json() as any;
+    
+    const firstPage = data.pages[0];
+    expect(firstPage).toHaveProperty('title');
+    expect(firstPage).toHaveProperty('body');
+    
+    // We explicitly check that NO extra fields are present beyond the schema
+    const allowedKeys = ['id', 'projectId', 'slug', 'type', 'title', 'body', 'faq', 'meta', 'createdAt'];
+    const keys = Object.keys(firstPage);
+    keys.forEach(key => {
+      expect(allowedKeys).toContain(key);
+    });
+    
+    // Specifically check for renter-related or config-related leaks
+    expect(firstPage.renterId).toBeUndefined();
+    expect(firstPage.configJson).toBeUndefined();
   });
 });
