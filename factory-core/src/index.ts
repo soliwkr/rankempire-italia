@@ -8,6 +8,7 @@ import dashboardApi from './api/dashboard';
 import generateApi from './api/generate';
 import seedApi from './api/seed';
 import { renterAuth } from './middleware/renter-auth';
+import renterProjectsApi from './api/renter/projects';
 
 type Bindings = {
   DB: D1Database;
@@ -39,8 +40,7 @@ app.route('/api/sites', sitesApi); // Contenuto siti: pubblico per design (SEO, 
 // Area Renter — Autenticazione basata su JWT
 const renterApp = new Hono<{ Bindings: Bindings }>();
 renterApp.use('/*', renterAuth);
-// TODO: Aggiungere rotte specifiche per i renter qui
-// renterApp.route('/projects', renterProjectsApi);
+renterApp.route('/projects', renterProjectsApi);
 
 app.route('/api/renter', renterApp);
 
