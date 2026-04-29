@@ -1,66 +1,142 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Hono } from 'hono';
 
 // Mock drizzle-orm/d1
 vi.mock('drizzle-orm/d1', () => ({
-  drizzle: vi.fn(() => ({
-    select: vi.fn(() => ({
-      from: vi.fn((table) => ({
-        all: async () => {
-          // Nota: table è un oggetto schema di drizzle, non una stringa
-          // Ma in questo mock semplificato cercheremo di capire quale tabella è
-          return [{ value: 0 }];
-        },
-      })),
-    })),
-  })),
+  drizzle: vi.fn(),
 }));
 
-import api from './dashboard';
+// Mock drizzle-orm
+vi.mock('drizzle-orm', async () => {
+  const actual = await vi.importActual('drizzle-orm');
+  return {
+    ...actual,
+    eq: vi.fn(),
+    count: vi.fn(() => ({})),
+  };
+});
 
-describe('GET /api/dashboard/stats', () => {
-  it('dovrebbe ritornare le statistiche aggregate', async () => {
-    const { drizzle } = await import('drizzle-orm/d1');
-    const mockSelect = vi.fn();
-    (drizzle as any).mockReturnValue({
-      select: mockSelect
-    });
+import dashboardApi from './dashboard';
+import projectsApi from './projects';
+import leadsApi from './leads';
+import { drizzle } from 'drizzle-orm/d1';
 
-    // Mock della prima chiamata (projects)
-    mockSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValueOnce({
-        all: async () => [{ value: 10 }]
-      })
-    });
+describe('Dashboard Core API', () => {
+  let mockDb: any;
 
-    // Mock della seconda chiamata (leads)
-    mockSelect.mockReturnValueOnce({
-      from: vi.fn().mockReturnValueOnce({
-        all: async () => [{ value: 50 }]
-      })
-    });
-
-    const res = await api.request('/stats', {
-      method: 'GET',
-    }, { DB: {} as any } as any);
-
-    expect(res.status).toBe(200);
-    const body = await res.json() as any;
-    expect(body.totalProjects).toBe(10);
-    expect(body.totalLeads).toBe(50);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockDb = {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      all: vi.fn(),
+      get: vi.fn(),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      run: vi.fn(),
+    };
+    (drizzle as any).mockReturnValue(mockDb);
   });
 
-  it('dovrebbe gestire errori del database', async () => {
-    const { drizzle } = await import('drizzle-orm/d1');
-    (drizzle as any).mockReturnValue({
-      select: () => { throw new Error('DB Error'); }
+  describe('GET /api/dashboard/stats', () => {
+    it('should return aggregated stats', async () => {
+      mockDb.all
+        .mockResolvedValueOnce([{ value: 10 }]) // projects count
+        .mockResolvedValueOnce([{ value: 50 }]); // leads count
+
+      const res = await dashboardApi.request('/stats', {
+        method: 'GET',
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.totalProjects).toBe(10);
+      expect(body.totalLeads).toBe(50);
+      expect(body.timestamp).toBeDefined();
     });
 
-    const res = await api.request('/stats', {
-      method: 'GET',
-    }, { DB: {} as any } as any);
+    it('should handle database errors', async () => {
+      mockDb.all.mockRejectedValue(new Error('DB Error'));
 
-    expect(res.status).toBe(500);
-    const body = await res.json() as any;
-    expect(body.error).toBe('Failed to fetch dashboard stats');
+      const res = await dashboardApi.request('/stats', {
+        method: 'GET',
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.error).toBe('Failed to fetch dashboard stats');
+    });
+  });
+
+  describe('PATCH /api/projects/:id', () => {
+    it('should update project fields', async () => {
+      mockDb.get.mockResolvedValue({ id: 'proj-1' });
+      mockDb.run.mockResolvedValue({ meta: { changes: 1 } });
+
+      const res = await projectsApi.request('/proj-1', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'live', name: 'Updated Name' }),
+        headers: { 'Content-Type': 'application/json' },
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.updated).toContain('status');
+      expect(body.updated).toContain('name');
+    });
+
+    it('should return 404 if project not found', async () => {
+      mockDb.get.mockResolvedValue(null);
+
+      const res = await projectsApi.request('/non-existent', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'live' }),
+        headers: { 'Content-Type': 'application/json' },
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('PATCH /api/leads/:id', () => {
+    it('should update lead status', async () => {
+      mockDb.run.mockResolvedValue({ meta: { changes: 1 } });
+
+      const res = await leadsApi.request('/lead-1', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'active' }),
+        headers: { 'Content-Type': 'application/json' },
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+    });
+
+    it('should validate status enum', async () => {
+      const res = await leadsApi.request('/lead-1', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'invalid-status' }),
+        headers: { 'Content-Type': 'application/json' },
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.success).toBe(false);
+    });
+
+    it('should return 404 if lead not found', async () => {
+      mockDb.run.mockResolvedValue({ meta: { changes: 0 } });
+
+      const res = await leadsApi.request('/non-existent', {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'trash' }),
+        headers: { 'Content-Type': 'application/json' },
+      }, { DB: {} } as any);
+
+      expect(res.status).toBe(404);
+    });
   });
 });
