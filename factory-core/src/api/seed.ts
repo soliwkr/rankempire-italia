@@ -39,8 +39,8 @@ async function callGemini(
 ): Promise<GeneratedPage[]> {
   // Se CF_AI_GATEWAY_TOKEN non è disponibile (dev locale), chiama Google AI direttamente
   const url = env.CF_AI_GATEWAY_TOKEN
-    ? `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.CF_AI_GATEWAY_NAME}/google-ai-studio/v1beta/models/gemini-2.5-flash:generateContent`
-    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+    ? `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.CF_AI_GATEWAY_NAME}/google-ai-studio/v1beta/models/gemini-flash-latest:generateContent`
+    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

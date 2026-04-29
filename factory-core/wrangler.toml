@@ -9,7 +9,7 @@ database_id = "2a419fc6-6d52-4249-852c-49f13f20d47f"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "FACTORY_KV_ID"
+id = "cc03849214564c358b59c7536ecaf9f9"
 
 [vars]
 EMAIL_FROM = "Rankame <noreply@rankame.com>"

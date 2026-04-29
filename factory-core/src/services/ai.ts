@@ -9,8 +9,8 @@ export class AiService {
   private baseUrl: string;
 
   constructor(private config: AiConfig) {
-    // Utilizziamo v1beta e il modello gemini-2.5-flash rilevato dai log
-    this.baseUrl = `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayName}/google-ai-studio/v1beta/models/gemini-2.5-flash:generateContent`;
+    // Utilizziamo v1beta e il modello gemini-flash-latest rilevato dai log
+    this.baseUrl = `https://gateway.ai.cloudflare.com/v1/${config.accountId}/${config.gatewayName}/google-ai-studio/v1beta/models/gemini-flash-latest:generateContent`;
   }
 
   async generateContent(prompt: string, schema?: any) {

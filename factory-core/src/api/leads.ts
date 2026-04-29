@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { leads } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { leads, projects } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { GitHubService } from '../services/github';
 import { EmailService } from '../services/email';
 import { z } from 'zod';
@@ -24,6 +24,36 @@ type Bindings = {
 };
 
 const api = new Hono<{ Bindings: Bindings }>();
+
+api.get('/', async (c) => {
+  const db = drizzle(c.env.DB);
+  const limit = Math.min(Number(c.req.query('limit') ?? 20), 100);
+  const projectSlug = c.req.query('project_slug');
+
+  const baseQuery = db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      phone: leads.phone,
+      email: leads.email,
+      message: leads.message,
+      status: leads.status,
+      doiStatus: leads.doiStatus,
+      createdAt: leads.createdAt,
+      projectSlug: projects.slug,
+      projectName: projects.name,
+    })
+    .from(leads)
+    .leftJoin(projects, eq(leads.projectId, projects.id))
+    .orderBy(desc(leads.createdAt))
+    .limit(limit);
+
+  const rows = projectSlug
+    ? await baseQuery.where(eq(projects.slug, projectSlug)).all()
+    : await baseQuery.all();
+
+  return c.json(rows);
+});
 
 api.post('/', async (c) => {
   const body = await c.req.json();

@@ -36,6 +36,7 @@ export const leads = sqliteTable('leads', {
   status: text('status').default('new').notNull(),
   doiStatus: text('doi_status').default('pending').notNull(),
   verificationToken: text('verification_token'),
+  avatar: text('avatar'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
