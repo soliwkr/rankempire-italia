@@ -5,6 +5,7 @@ import { projects } from '../db/schema';
 import { GitHubService } from '../services/github';
 import { CloudflarePagesService } from '../services/cloudflare-pages';
 import { CloudflareDNSService } from '../services/cloudflare-dns';
+import { GoogleTrackingService } from '../services/google-tracking';
 
 type Bindings = {
   DB: D1Database;
@@ -14,6 +15,9 @@ type Bindings = {
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
   FACTORY_API_URL: string;
+  GOOGLE_CLIENT_EMAIL: string;
+  GOOGLE_PRIVATE_KEY: string;
+  GA4_ACCOUNT_ID: string;
 };
 
 const api = new Hono<{ Bindings: Bindings }>();
@@ -264,11 +268,44 @@ api.post('/:id/domain', async (c) => {
       console.log(`[domain] Domain already linked to Pages, skipping.`);
     }
 
-    // 4. Update D1
+    // 4. Setup Google Tracking (GSC & GA4)
+    let measurementId = project.ga4MeasurementId;
+    const siteUrl = `https://${customDomain}`;
+
+    if (c.env.GOOGLE_CLIENT_EMAIL && c.env.GOOGLE_PRIVATE_KEY) {
+      const googleTracking = new GoogleTrackingService({
+        clientEmail: c.env.GOOGLE_CLIENT_EMAIL,
+        privateKey: c.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      });
+
+      try {
+        console.log(`[domain] Setting up Google Search Console for ${siteUrl}...`);
+        await googleTracking.addSiteToGSC(siteUrl);
+      } catch (gscErr: any) {
+        console.error(`[domain] GSC Setup failed (non-fatal):`, gscErr.message);
+      }
+
+      if (!measurementId && c.env.GA4_ACCOUNT_ID) {
+        try {
+          console.log(`[domain] Setting up GA4 for ${customDomain}...`);
+          measurementId = await googleTracking.setupGA4(
+            c.env.GA4_ACCOUNT_ID,
+            project.name || customDomain,
+            siteUrl
+          );
+        } catch (ga4Err: any) {
+          console.error(`[domain] GA4 Setup failed (non-fatal):`, ga4Err.message);
+        }
+      }
+    }
+
+    // 5. Update D1
     await db.update(projects)
       .set({
         domain: customDomain,
         status: 'live',
+        ga4MeasurementId: measurementId,
+        gscSiteUrl: siteUrl,
       })
       .where(eq(projects.id, id));
 
