@@ -25,6 +25,7 @@ export const projects = sqliteTable('projects', {
   pagesUrl: text('pages_url'),
   ga4MeasurementId: text('ga4_measurement_id'),
   gscSiteUrl: text('gsc_site_url'),
+  proofSentAt: text('proof_sent_at'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
