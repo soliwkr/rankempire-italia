@@ -4,6 +4,7 @@ import { leads, projects } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { GitHubService } from '../services/github';
 import { EmailService } from '../services/email';
+import { TelegramService } from '../services/telegram';
 import { z } from 'zod';
 
 const leadSchema = z.object({
@@ -13,6 +14,7 @@ const leadSchema = z.object({
   phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Invalid phone format'),
   message: z.string().optional(),
   project_name: z.string().optional(),
+  avatar: z.enum(['A', 'B', 'C', 'D']).optional(),
   website_url: z.string().optional(), // Honeypot
 });
 
@@ -21,6 +23,8 @@ type Bindings = {
   RESEND_API_KEY: string;
   EMAIL_FROM: string;
   VERIFICATION_BASE_URL: string;
+  TELEGRAM_BOT_TOKEN: string;
+  TELEGRAM_CHAT_ID: string;
 };
 
 const api = new Hono<{ Bindings: Bindings }>();
@@ -69,7 +73,7 @@ api.post('/', async (c) => {
     return c.json({ success: false, errors: validation.error.errors }, 400);
   }
 
-  const { project_id, name, email, phone, message, project_name } = validation.data;
+  const { project_id, name, email, phone, message, project_name, avatar } = validation.data;
   
   const db = drizzle(c.env.DB);
   const leadId = crypto.randomUUID();
@@ -85,6 +89,7 @@ api.post('/', async (c) => {
     status: 'pending',
     doiStatus: 'pending',
     verificationToken: token,
+    avatar: avatar,
   });
 
   const emailService = new EmailService({ apiKey: c.env.RESEND_API_KEY, from: c.env.EMAIL_FROM, verificationBaseUrl: c.env.VERIFICATION_BASE_URL });
@@ -99,12 +104,41 @@ api.get('/verify', async (c) => {
 
   if (!token) return c.text('Missing token', 400);
 
-  const result = await db.update(leads)
-    .set({ doiStatus: 'verified', status: 'active' })
-    .where(eq(leads.verificationToken, token))
-    .returning();
+  const result = await db.select({
+    id: leads.id,
+    email: leads.email,
+    avatar: leads.avatar,
+    projectName: projects.name,
+  })
+  .from(leads)
+  .innerJoin(projects, eq(leads.projectId, projects.id))
+  .where(eq(leads.verificationToken, token))
+  .get();
 
-  if (result.length === 0) return c.text('Invalid token', 404);
+  if (!result) return c.text('Invalid token', 404);
+
+  await db.update(leads)
+    .set({ doiStatus: 'verified', status: 'active' })
+    .where(eq(leads.id, result.id))
+    .run();
+
+  // Trigger Telegram Notification
+  if (c.env.TELEGRAM_BOT_TOKEN && c.env.TELEGRAM_CHAT_ID) {
+    const telegram = new TelegramService({
+      botToken: c.env.TELEGRAM_BOT_TOKEN,
+      chatId: c.env.TELEGRAM_CHAT_ID
+    });
+    
+    try {
+      await telegram.notifyLeadVerified({
+        email: result.email!,
+        projectName: result.projectName,
+        avatar: result.avatar || undefined
+      });
+    } catch (e) {
+      console.error('Failed to send Telegram notification:', e);
+    }
+  }
 
   return c.text('Email verificata con successo!');
 });
