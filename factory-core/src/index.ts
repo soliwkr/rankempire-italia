@@ -10,9 +10,12 @@ import seedApi from './api/seed';
 import { renterAuth } from './middleware/renter-auth';
 import renterProjectsApi from './api/renter/projects';
 import renterPagesApi from './api/renter/pages';
+import renterMediaApi from './api/renter/media';
 
 type Bindings = {
   DB: D1Database;
+  R2_MEDIA: R2Bucket;
+  MEDIA_PUBLIC_URL: string;
   KV: KVNamespace;
   GITHUB_TOKEN: string;
   GOOGLE_AI_API_KEY: string;
@@ -43,6 +46,7 @@ const renterApp = new Hono<{ Bindings: Bindings }>();
 renterApp.use('/*', renterAuth);
 renterApp.route('/projects', renterProjectsApi);
 renterApp.route('/pages', renterPagesApi);
+renterApp.route('/media', renterMediaApi);
 
 app.route('/api/renter', renterApp);
 

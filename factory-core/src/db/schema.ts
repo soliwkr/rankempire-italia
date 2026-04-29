@@ -66,3 +66,15 @@ export const pages = sqliteTable('pages', {
 }, (table) => ({
   projectSlugUniq: uniqueIndex('pages_project_slug_uniq').on(table.projectId, table.slug),
 }));
+
+export const media = sqliteTable('media', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id),
+  renterId: text('renter_id').notNull().references(() => renters.id),
+  filename: text('filename').notNull(),
+  contentType: text('content_type').notNull(),
+  size: integer('size').notNull(),
+  url: text('url').notNull(),
+  r2Key: text('r2_key').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
