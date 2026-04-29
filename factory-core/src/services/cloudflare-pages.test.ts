@@ -119,3 +119,60 @@ describe('CloudflarePagesService — createProject', () => {
     }
   });
 });
+
+describe('CloudflarePagesService — addProjectDomain', () => {
+  let service: CloudflarePagesService;
+
+  beforeEach(() => {
+    service = new CloudflarePagesService({
+      apiToken: 'test-cf-token',
+      accountId: 'test-account-id',
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('chiama POST /accounts/{accountId}/pages/projects/{projectName}/domains con metodo POST', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      mockResponse(200, { result: { name: 'example.com' }, success: true, errors: [] })
+    );
+
+    await service.addProjectDomain('rr-idraulico-roma', 'idraulicoformia.it');
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(url).toContain('api.cloudflare.com/client/v4/accounts/test-account-id/pages/projects/rr-idraulico-roma/domains');
+    expect((init as RequestInit).method).toBe('POST');
+  });
+
+  it('include header Authorization: Bearer {apiToken}', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      mockResponse(200, { result: { name: 'test.com' }, success: true, errors: [] })
+    );
+
+    await service.addProjectDomain('rr-test', 'test.com');
+
+    const headers = (fetchSpy.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer test-cf-token');
+  });
+
+  it('costruisce payload con name: domain', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      mockResponse(200, { result: { name: 'test.com' }, success: true, errors: [] })
+    );
+
+    await service.addProjectDomain('rr-test', 'test.com');
+
+    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.name).toBe('test.com');
+  });
+
+  it('lancia Error con status code se la risposta non è ok', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('{"errors":["Already exists"]}', { status: 409 })
+    );
+
+    await expect(
+      service.addProjectDomain('rr-test', 'test.com')
+    ).rejects.toThrow(/Cloudflare Pages API error: 409/);
+  });
+});

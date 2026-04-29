@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { projects } from '../db/schema';
 import { GitHubService } from '../services/github';
 import { CloudflarePagesService } from '../services/cloudflare-pages';
+import { CloudflareDNSService } from '../services/cloudflare-dns';
 
 type Bindings = {
   DB: D1Database;
@@ -197,6 +198,89 @@ api.post('/:id/deploy', async (c) => {
     }
     console.error('[deploy] Error:', err.message);
     return c.json({ error: 'Deployment failed', details: err.message }, 500);
+  }
+});
+
+api.post('/:id/domain', async (c) => {
+  const db = drizzle(c.env.DB);
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const customDomain = body.domain;
+
+  if (!customDomain) {
+    return c.json({ error: 'Domain is required' }, 400);
+  }
+
+  // Fetch progetto
+  const project = await db.select().from(projects).where(eq(projects.id, id)).get();
+  if (!project) {
+    return c.json({ error: 'Project not found' }, 404);
+  }
+
+  const dns = new CloudflareDNSService({
+    apiToken: c.env.CF_API_TOKEN,
+    accountId: c.env.CF_ACCOUNT_ID,
+  });
+  const cfPages = new CloudflarePagesService({
+    apiToken: c.env.CF_API_TOKEN,
+    accountId: c.env.CF_ACCOUNT_ID,
+  });
+
+  try {
+    // 1. Estrai Apex Domain per trovare la Zone ID
+    // Esempio: "idraulico-roma.puraluce.studio" -> "puraluce.studio"
+    const domainParts = customDomain.split('.');
+    const apexDomain = domainParts.slice(-2).join('.');
+    
+    console.log(`[domain] Resolving zone for ${apexDomain}...`);
+    const zoneId = await dns.getZoneId(apexDomain);
+
+    // 2. Crea record CNAME
+    // Se customDomain === apexDomain (es. "idraulicoformia.it"), name è "@"
+    // Se customDomain è sottodominio (es. "id.puraluce.studio"), name è "id"
+    const recordName = customDomain === apexDomain ? '@' : customDomain.replace(`.${apexDomain}`, '');
+    const pagesTarget = `${project.pagesProjectName}.pages.dev`;
+
+    console.log(`[domain] Creating CNAME record: ${recordName} -> ${pagesTarget}...`);
+    try {
+      await dns.createCnameRecord(zoneId, recordName, pagesTarget);
+    } catch (dnsErr: any) {
+      // Se il record esiste già (409), ignoriamo e proseguiamo
+      if (!dnsErr.message.includes('409')) {
+        throw dnsErr;
+      }
+      console.log(`[domain] DNS record already exists, skipping.`);
+    }
+
+    // 3. Associa dominio a Pages
+    console.log(`[domain] Linking ${customDomain} to Pages project ${project.pagesProjectName}...`);
+    try {
+      await cfPages.addProjectDomain(project.pagesProjectName!, customDomain);
+    } catch (pagesErr: any) {
+      // Anche qui, se è già associato ignoriamo
+      if (!pagesErr.message.includes('409')) {
+        throw pagesErr;
+      }
+      console.log(`[domain] Domain already linked to Pages, skipping.`);
+    }
+
+    // 4. Update D1
+    await db.update(projects)
+      .set({
+        domain: customDomain,
+        status: 'live',
+      })
+      .where(eq(projects.id, id));
+
+    return c.json({
+      success: true,
+      domain: customDomain,
+      status: 'live'
+    });
+
+  } catch (err: any) {
+    console.error('[domain] Error:', err.message);
+    return c.json({ error: 'Domain assignment failed', details: err.message }, 500);
   }
 });
 

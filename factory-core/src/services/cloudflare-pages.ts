@@ -9,6 +9,13 @@ export interface CloudflarePagesProject {
   // URL pubblico: subdomain + '.pages.dev'
 }
 
+export interface CloudflarePagesDomain {
+  id: string;
+  name: string;
+  status: 'active' | 'pending' | 'blocked' | 'declined';
+  certificate_status: 'active' | 'pending' | 'blocked' | 'declined';
+}
+
 export class CloudflarePagesService {
   constructor(private config: CloudflarePagesConfig) {}
 
@@ -67,6 +74,39 @@ export class CloudflarePagesService {
     }
 
     const result = await response.json() as { result: CloudflarePagesProject; success: boolean; errors: any[] };
+    return result.result;
+  }
+
+  /**
+   * Associa un dominio custom a un progetto CF Pages.
+   * Il dominio deve essere aggiunto come CNAME nei DNS prima o dopo questa chiamata.
+   */
+  async addProjectDomain(
+    projectName: string,
+    domain: string
+  ): Promise<CloudflarePagesDomain> {
+    const body = {
+      name: domain,
+    };
+
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${this.config.accountId}/pages/projects/${projectName}/domains`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Cloudflare Pages API error: ${response.status} ${error}`);
+    }
+
+    const result = await response.json() as { result: CloudflarePagesDomain; success: boolean; errors: any[] };
     return result.result;
   }
 }
