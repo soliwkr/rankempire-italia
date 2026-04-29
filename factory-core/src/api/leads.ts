@@ -106,9 +106,12 @@ api.get('/verify', async (c) => {
 
   const result = await db.select({
     id: leads.id,
+    projectId: projects.id,
     email: leads.email,
     avatar: leads.avatar,
     projectName: projects.name,
+    projectUrl: projects.pagesUrl,
+    proofSentAt: projects.proofSentAt,
   })
   .from(leads)
   .innerJoin(projects, eq(leads.projectId, projects.id))
@@ -130,11 +133,26 @@ api.get('/verify', async (c) => {
     });
     
     try {
+      // 1. Notify Lead Verified
       await telegram.notifyLeadVerified({
         email: result.email!,
         projectName: result.projectName,
         avatar: result.avatar || undefined
       });
+
+      // 2. Check if Proof Package notification is needed
+      if (!result.proofSentAt) {
+        await telegram.notifyProofReady({
+          name: result.projectName,
+          url: result.projectUrl || 'N/A'
+        });
+
+        // Update proofSentAt to avoid double notification
+        await db.update(projects)
+          .set({ proofSentAt: new Date().toISOString() })
+          .where(eq(projects.id, result.projectId))
+          .run();
+      }
     } catch (e) {
       console.error('Failed to send Telegram notification:', e);
     }
