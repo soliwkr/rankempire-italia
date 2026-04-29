@@ -46,4 +46,16 @@ export class TelegramService {
 
     return this.sendMessage(message);
   }
+
+  /**
+   * Notifies the operator that a Proof Package is ready for a project.
+   */
+  async notifyProofReady(project: { name: string; url: string }) {
+    let message = `📦 <b>Proof Package Pronto!</b>\n\n`;
+    message += `🏗️ <b>Progetto:</b> ${project.name}\n`;
+    message += `🔗 <b>URL:</b> ${project.url}\n\n`;
+    message += `Il primo lead è stato verificato. È ora di inviare il pacchetto di prova al cliente.`;
+
+    return this.sendMessage(message);
+  }
 }

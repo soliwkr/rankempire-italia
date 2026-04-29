@@ -86,4 +86,22 @@ describe('TelegramService', () => {
     const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as any).body);
     expect(body.text).not.toContain('Avatar:');
   });
+
+  it('should format proof ready message correctly', async () => {
+    const mockResponse = { ok: true, json: () => Promise.resolve({ ok: true }) };
+    vi.mocked(fetch).mockResolvedValue(mockResponse as any);
+
+    const project = {
+      name: 'RankEmpire IT',
+      url: 'https://rankempire.it'
+    };
+
+    await service.notifyProofReady(project);
+
+    expect(fetch).toHaveBeenCalled();
+    const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as any).body);
+    expect(body.text).toContain('Proof Package Pronto');
+    expect(body.text).toContain('RankEmpire IT');
+    expect(body.text).toContain('https://rankempire.it');
+  });
 });
