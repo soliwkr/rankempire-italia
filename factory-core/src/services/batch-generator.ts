@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, sql } from 'drizzle-orm';
 import { PromptService, sanitizeHtml, type AvatarType } from './prompts';
+import { slugify, slugifyServiceZone } from './slug';
 import { projects, pages } from '../db/schema';
 
 // Types from seed.ts for consistency
@@ -60,47 +61,59 @@ export class BatchGenerator {
       total: 0,
     };
 
-    // 1. Homepage
+    // 1. Homepage — slug always 'homepage' (Gemini's slug field is ignored here)
     const hpPrompt = this.promptService.generateHomepagePrompt(context, avatar);
     const hpGenerated = await this.callGemini(hpPrompt);
-    await this.upsertPages(projectId, hpGenerated);
+    await this.upsertPages(projectId, hpGenerated, () => 'homepage');
     results.homepage = hpGenerated.length;
     results.total += hpGenerated.length;
 
-    // 2. Services
+    // 2. Services — slug = slugify(serviceName), positional match to config.services
     if (config.services.length > 0) {
       const sPrompt = this.promptService.generateServicesPrompt(context, config.services, avatar);
       const sGenerated = await this.callGemini(sPrompt);
-      await this.upsertPages(projectId, sGenerated);
+      await this.upsertPages(
+        projectId,
+        sGenerated,
+        (_p, i) => slugify(config.services[i] ?? sGenerated[i]?.slug ?? '')
+      );
       results.services = sGenerated.length;
       results.total += sGenerated.length;
     }
 
-    // 3. Zones
+    // 3. Zones — slug = `zone/${slugify(zoneName)}`, positional match to config.zones
     if (config.zones.length > 0) {
       const zPrompt = this.promptService.generateZonesPrompt(context, config.zones, avatar);
       const zGenerated = await this.callGemini(zPrompt);
-      await this.upsertPages(projectId, zGenerated);
+      await this.upsertPages(
+        projectId,
+        zGenerated,
+        (_p, i) => `zone/${slugify(config.zones[i] ?? zGenerated[i]?.slug ?? '')}`
+      );
       results.zones = zGenerated.length;
       results.total += zGenerated.length;
     }
 
-    // 4. Service Zones (N calls, one per service)
+    // 4. Service Zones — slug = `${slugify(service)}/${slugify(zone)}`, positional per service loop
     if (config.services.length > 0 && config.zones.length > 0) {
       for (const service of config.services) {
         const szPrompt = this.promptService.generateServiceZonesPrompt(context, service, config.zones, avatar);
         const szGenerated = await this.callGemini(szPrompt);
-        await this.upsertPages(projectId, szGenerated);
+        await this.upsertPages(
+          projectId,
+          szGenerated,
+          (_p, i) => slugifyServiceZone(service, config.zones[i] ?? '')
+        );
         results.service_zones += szGenerated.length;
         results.total += szGenerated.length;
       }
     }
 
-    // 5. Blog
+    // 5. Blog — slug = slugify(Gemini's slug); blog topics are not pre-known
     if (config.includeBlog) {
       const bPrompt = this.promptService.generateBlogPrompt(context, avatar);
       const bGenerated = await this.callGemini(bPrompt);
-      await this.upsertPages(projectId, bGenerated);
+      await this.upsertPages(projectId, bGenerated, (p) => slugify(p.slug));
       results.blog = bGenerated.length;
       results.total += bGenerated.length;
     }
@@ -176,16 +189,22 @@ export class BatchGenerator {
   /**
    * Writes batch of pages to D1 with idempotent upsert.
    * Logic mirrored from seed.ts.
+   *
+   * The slug is deterministically computed by `slugBuilder` (positional
+   * mapping back to the request context) so that Gemini's emitted `slug`
+   * field cannot drift from the canonical form expected by the Astro
+   * template.
    */
   private async upsertPages(
     projectId: string,
-    generatedPages: GeneratedPage[]
+    generatedPages: GeneratedPage[],
+    slugBuilder: (page: GeneratedPage, index: number) => string
   ): Promise<void> {
     const now = new Date().toISOString();
-    const rows = generatedPages.map(p => ({
+    const rows = generatedPages.map((p, i) => ({
       id: crypto.randomUUID(),
       projectId,
-      slug: p.slug,
+      slug: slugBuilder(p, i),
       type: p.type,
       title: p.title,
       body: sanitizeHtml(p.body),

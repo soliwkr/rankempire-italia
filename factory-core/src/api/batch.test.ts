@@ -149,8 +149,13 @@ describe('Batch Generation Integration Test', () => {
     
     // Verify DB writes
     expect(upsertedPages.length).toBe(9);
-    expect(upsertedPages.find(p => p.slug === 'index')).toBeDefined();
-    expect(upsertedPages.find(p => p.slug === 'riparazione-caldaie-centro')).toBeDefined();
+    // Slugs are computed canonically by the BatchGenerator from the request
+    // context (Gemini's `slug` field is ignored). Homepage is always
+    // 'homepage'; service_zone uses slash convention to match the template.
+    expect(upsertedPages.find(p => p.slug === 'homepage')).toBeDefined();
+    expect(upsertedPages.find(p => p.slug === 'riparazione-caldaie/centro')).toBeDefined();
+    expect(upsertedPages.find(p => p.slug === 'zone/centro')).toBeDefined();
+    expect(upsertedPages.find(p => p.slug === 'riparazione-caldaie')).toBeDefined();
 
     fetchSpy.mockRestore();
   });
