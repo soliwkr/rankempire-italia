@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq, sql } from 'drizzle-orm';
 import { PromptService, sanitizeHtml, type AvatarType } from './prompts';
 import { qualityCheck } from './quality-check';
+import { slugify, slugifyServiceZone } from './slug';
 import { projects, pages } from '../db/schema';
 
 interface GeneratedPage {
@@ -58,57 +59,69 @@ export class BatchGenerator {
       qualityRejected: 0,
     };
 
-    // 1. Homepage
+    // 1. Homepage — slug always 'homepage' (Gemini's slug field is ignored here)
     const hpPrompt = this.promptService.generateHomepagePrompt(context, avatar);
     const hpGenerated = await this.callGemini(hpPrompt);
     const hpPassed = this.applyQualityFilter(hpGenerated);
     results.qualityRejected += hpGenerated.length - hpPassed.length;
-    await this.upsertPages(projectId, hpPassed);
+    await this.upsertPages(projectId, hpPassed, () => 'homepage');
     results.homepage = hpPassed.length;
     results.total += hpPassed.length;
 
-    // 2. Services
+    // 2. Services — slug = slugify(serviceName), positional match to config.services
     if (config.services.length > 0) {
       const sPrompt = this.promptService.generateServicesPrompt(context, config.services, avatar);
       const sGenerated = await this.callGemini(sPrompt);
       const sPassed = this.applyQualityFilter(sGenerated);
       results.qualityRejected += sGenerated.length - sPassed.length;
-      await this.upsertPages(projectId, sPassed);
+      await this.upsertPages(
+        projectId,
+        sPassed,
+        (_p, i) => slugify(config.services[i] ?? sPassed[i]?.slug ?? '')
+      );
       results.services = sPassed.length;
       results.total += sPassed.length;
     }
 
-    // 3. Zones
+    // 3. Zones — slug = `zone/${slugify(zoneName)}`, positional match to config.zones
     if (config.zones.length > 0) {
       const zPrompt = this.promptService.generateZonesPrompt(context, config.zones, avatar);
       const zGenerated = await this.callGemini(zPrompt);
       const zPassed = this.applyQualityFilter(zGenerated);
       results.qualityRejected += zGenerated.length - zPassed.length;
-      await this.upsertPages(projectId, zPassed);
+      await this.upsertPages(
+        projectId,
+        zPassed,
+        (_p, i) => `zone/${slugify(config.zones[i] ?? zPassed[i]?.slug ?? '')}`
+      );
       results.zones = zPassed.length;
       results.total += zPassed.length;
     }
 
-    // 4. Service Zones
+    // 4. Service Zones — slug = `${slugify(service)}/${slugify(zone)}`, positional per service loop
     if (config.services.length > 0 && config.zones.length > 0) {
       for (const service of config.services) {
         const szPrompt = this.promptService.generateServiceZonesPrompt(context, service, config.zones, avatar);
         const szGenerated = await this.callGemini(szPrompt);
         const szPassed = this.applyQualityFilter(szGenerated);
         results.qualityRejected += szGenerated.length - szPassed.length;
-        await this.upsertPages(projectId, szPassed);
+        await this.upsertPages(
+          projectId,
+          szPassed,
+          (_p, i) => slugifyServiceZone(service, config.zones[i] ?? '')
+        );
         results.service_zones += szPassed.length;
         results.total += szPassed.length;
       }
     }
 
-    // 5. Blog
+    // 5. Blog — slug = slugify(Gemini's slug); blog topics are not pre-known
     if (config.includeBlog) {
       const bPrompt = this.promptService.generateBlogPrompt(context, avatar);
       const bGenerated = await this.callGemini(bPrompt);
       const bPassed = this.applyQualityFilter(bGenerated);
       results.qualityRejected += bGenerated.length - bPassed.length;
-      await this.upsertPages(projectId, bPassed);
+      await this.upsertPages(projectId, bPassed, (p) => slugify(p.slug));
       results.blog = bPassed.length;
       results.total += bPassed.length;
     }
@@ -187,16 +200,24 @@ export class BatchGenerator {
     return parsed as GeneratedPage[];
   }
 
+  /**
+   * Writes batch of pages to D1 with idempotent upsert.
+   * The slug is deterministically computed by `slugBuilder` (positional
+   * mapping back to the request context) so that Gemini's emitted `slug`
+   * field cannot drift from the canonical form expected by the Astro
+   * template.
+   */
   private async upsertPages(
     projectId: string,
-    generatedPages: GeneratedPage[]
+    generatedPages: GeneratedPage[],
+    slugBuilder: (page: GeneratedPage, index: number) => string
   ): Promise<void> {
     if (generatedPages.length === 0) return;
     const now = new Date().toISOString();
-    const rows = generatedPages.map(p => ({
+    const rows = generatedPages.map((p, i) => ({
       id: crypto.randomUUID(),
       projectId,
-      slug: p.slug,
+      slug: slugBuilder(p, i),
       type: p.type,
       title: p.title,
       body: sanitizeHtml(p.body),
