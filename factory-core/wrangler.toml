@@ -11,6 +11,10 @@ database_id = "2a419fc6-6d52-4249-852c-49f13f20d47f"
 binding = "KV"
 id = "cc03849214564c358b59c7536ecaf9f9"
 
+[[r2_buckets]]
+binding = "R2_MEDIA"
+bucket_name = "rank-rent-storage"
+
 [vars]
 EMAIL_FROM = "Rankame <noreply@rankame.com>"
 VERIFICATION_BASE_URL = "https://factory-core.soliwkr.workers.dev/verify"
