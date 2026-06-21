@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, sql } from 'drizzle-orm';
 import { PromptService, sanitizeHtml, type AvatarType } from './prompts';
+import { qualityCheck } from './quality-check';
 import { projects, pages } from '../db/schema';
 
 // Types from seed.ts for consistency
@@ -182,17 +183,25 @@ export class BatchGenerator {
     generatedPages: GeneratedPage[]
   ): Promise<void> {
     const now = new Date().toISOString();
-    const rows = generatedPages.map(p => ({
-      id: crypto.randomUUID(),
-      projectId,
-      slug: p.slug,
-      type: p.type,
-      title: p.title,
-      body: sanitizeHtml(p.body),
-      faq: JSON.stringify(p.faq),
-      meta: JSON.stringify(p.meta),
-      createdAt: now,
-    }));
+    const rows = generatedPages
+      .filter(p => {
+        const qr = qualityCheck({ title: p.title, body: p.body });
+        if (!qr.ok) {
+          console.warn(`[quality] Skipping page "${p.slug}": ${qr.reasons.join('; ')}`);
+        }
+        return qr.ok;
+      })
+      .map(p => ({
+        id: crypto.randomUUID(),
+        projectId,
+        slug: p.slug,
+        type: p.type,
+        title: p.title,
+        body: sanitizeHtml(p.body),
+        faq: JSON.stringify(p.faq),
+        meta: JSON.stringify(p.meta),
+        createdAt: now,
+      }));
 
     await this.db
       .insert(pages)

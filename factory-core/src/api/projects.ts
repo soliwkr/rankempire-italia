@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from '../db/schema';
 import { GitHubService } from '../services/github';
-import { CloudflarePagesService } from '../services/cloudflare-pages';
 import { CloudflareDNSService } from '../services/cloudflare-dns';
 import { GoogleTrackingService } from '../services/google-tracking';
+import { workerUrl, buildWranglerToml } from '../services/cloudflare-workers';
 
 type Bindings = {
   DB: D1Database;
@@ -14,6 +14,7 @@ type Bindings = {
   GITHUB_TEMPLATE_REPO: string;
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
+  CF_WORKERS_SUBDOMAIN: string;
   FACTORY_API_URL: string;
   GOOGLE_CLIENT_EMAIL: string;
   GOOGLE_PRIVATE_KEY: string;
@@ -40,8 +41,11 @@ api.post('/', async (c) => {
     name: body.name,
     niche: body.niche,
     location: body.location,
-    domain: body.domain,
+    domain: body.domain ?? null,
     status: 'pending',
+    createdVia: body.createdVia ?? 'api',
+    buildMode: body.buildMode ?? 'speculative',
+    sourcePhotoR2Key: body.sourcePhotoR2Key ?? null,
   });
 
   return c.json({ success: true, id: projectId }, 201);
@@ -84,10 +88,8 @@ api.post('/:id/deploy', async (c) => {
     templateOwner: c.env.GITHUB_TEMPLATE_OWNER,
     templateRepo: c.env.GITHUB_TEMPLATE_REPO,
   });
-  const cfPages = new CloudflarePagesService({
-    apiToken: c.env.CF_API_TOKEN,
-    accountId: c.env.CF_ACCOUNT_ID,
-  });
+
+  const workersSubdomain = c.env.CF_WORKERS_SUBDOMAIN ?? 'soliwkr';
 
   try {
     const repoName = `rr-${project.slug}`;
@@ -95,11 +97,8 @@ api.post('/:id/deploy', async (c) => {
     let repoGithubName: string;
 
     // Step 1: Crea repo GitHub (skip se già completato)
+    // Ordine fisso per idempotency: createRepo → salva D1 → waitForRepo
     if (project.status === 'pending') {
-      // IMPORTANTE (D-10 idempotency): l'ordine è fisso:
-      // (a) createRepoFromTemplate → ottieni repoData subito, senza aspettare disponibilità
-      // (b) db.update repo_created → salva PRIMA del retry loop
-      // (c) waitForRepo → se fallisce, D1 è già aggiornato → ritorna 503 correttamente
       const repoData = await github.createRepoFromTemplate(
         repoName,
         `Rank & Rent Site for ${project.niche} in ${project.location}`
@@ -107,7 +106,6 @@ api.post('/:id/deploy', async (c) => {
       repoOwner = (repoData as any).owner?.login ?? c.env.GITHUB_TEMPLATE_OWNER;
       repoGithubName = (repoData as any).name ?? repoName;
 
-      // Salva subito — PRIMA di waitForRepo — per garantire idempotency (D-10)
       await db.update(projects)
         .set({
           status: 'repo_created',
@@ -115,23 +113,19 @@ api.post('/:id/deploy', async (c) => {
         })
         .where(eq(projects.id, id));
 
-      // Ora aspetta che il repo sia disponibile — se lancia Error, D1 è già salvato
       await github.waitForRepo(repoOwner, repoGithubName);
     } else {
-      // Riprendi da status parziale: estrai owner/name dal githubRepoUrl salvato
       const savedUrl = project.githubRepoUrl ?? '';
       const urlParts = savedUrl.replace('https://github.com/', '').split('/');
       repoOwner = urlParts[0] ?? c.env.GITHUB_TEMPLATE_OWNER;
       repoGithubName = urlParts[1] ?? repoName;
 
-      // Se status è 'repo_created', il repo esiste ma potrebbe non essere ancora disponibile
-      // Prova waitForRepo per sicurezza prima di procedere con createFile
       if (project.status === 'repo_created') {
         await github.waitForRepo(repoOwner, repoGithubName);
       }
     }
 
-    // Step 2: Inietta site.config.json (D-07/D-08)
+    // Step 2: Inietta site.config.json e wrangler.toml
     if (project.status === 'pending' || project.status === 'repo_created') {
       const siteConfig = {
         projectId: project.id,
@@ -159,42 +153,42 @@ api.post('/:id/deploy', async (c) => {
         'Inject site configuration'
       );
 
+      // Inject wrangler.toml with correct worker name — triggers GitHub Action deploy
+      await github.createFile(
+        repoOwner,
+        repoGithubName,
+        'wrangler.toml',
+        buildWranglerToml(project.slug, c.env.FACTORY_API_URL),
+        'Configure Cloudflare Worker deployment'
+      );
+
       await db.update(projects)
         .set({ status: 'pages_linked' })
         .where(eq(projects.id, id));
     }
 
-    // Step 3: Crea CF Pages project (D-01/D-02/D-03/D-04)
-    const pagesResult = await cfPages.createProject(
-      project.slug,
-      repoOwner,
-      repoGithubName,
-      c.env.FACTORY_API_URL
-    );
-
-    const subdomain = (pagesResult as any).subdomain ?? `rr-${project.slug}`;
-    const pagesUrl = subdomain.includes('.pages.dev') ? `https://${subdomain}` : `https://${subdomain}.pages.dev`;
-    const pagesProjectName = (pagesResult as any).name ?? `rr-${project.slug}`;
+    // Step 3: Record expected Worker URL (GitHub Action will do the actual deploy on push)
+    const wUrl = workerUrl(project.slug, workersSubdomain);
 
     await db.update(projects)
       .set({
         status: 'deploying',
-        pagesProjectName,
-        pagesUrl,
+        pagesProjectName: `rr-${project.slug}`,
+        pagesUrl: wUrl,
       })
       .where(eq(projects.id, id));
 
     return c.json({
       success: true,
       repoUrl: `https://github.com/${repoOwner}/${repoGithubName}`,
-      pagesUrl,
+      workerUrl: wUrl,
+      pagesUrl: wUrl,
       status: 'deploying',
+      note: 'GitHub Action is building and deploying — site will be live in ~2 minutes',
     });
 
   } catch (err: any) {
-    // waitForRepo lancia Error con "not ready after N attempts"
     if (err.message?.includes('not ready after')) {
-      // D1 è già a 'repo_created' (salvato PRIMA del waitForRepo nel blocco pending)
       return c.json({
         error: 'GitHub repo not ready — richiama /deploy per riprendere',
         status: 'repo_created',
@@ -225,50 +219,33 @@ api.post('/:id/domain', async (c) => {
     apiToken: c.env.CF_API_TOKEN,
     accountId: c.env.CF_ACCOUNT_ID,
   });
-  const cfPages = new CloudflarePagesService({
-    apiToken: c.env.CF_API_TOKEN,
-    accountId: c.env.CF_ACCOUNT_ID,
-  });
+  const workersSubdomain = c.env.CF_WORKERS_SUBDOMAIN ?? 'soliwkr';
 
   try {
     // 1. Estrai Apex Domain per trovare la Zone ID
     // Esempio: "idraulico-roma.puraluce.studio" -> "puraluce.studio"
     const domainParts = customDomain.split('.');
     const apexDomain = domainParts.slice(-2).join('.');
-    
+
     console.log(`[domain] Resolving zone for ${apexDomain}...`);
     const zoneId = await dns.getZoneId(apexDomain);
 
     // 2. Crea record CNAME
-    // Se customDomain === apexDomain (es. "idraulicoformia.it"), name è "@"
-    // Se customDomain è sottodominio (es. "id.puraluce.studio"), name è "id"
     const recordName = customDomain === apexDomain ? '@' : customDomain.replace(`.${apexDomain}`, '');
-    const pagesTarget = `${project.pagesProjectName}.pages.dev`;
+    // Workers URL as CNAME target
+    const workerTarget = `rr-${project.slug}.${workersSubdomain}.workers.dev`;
 
-    console.log(`[domain] Creating CNAME record: ${recordName} -> ${pagesTarget}...`);
+    console.log(`[domain] Creating CNAME record: ${recordName} -> ${workerTarget}...`);
     try {
-      await dns.createCnameRecord(zoneId, recordName, pagesTarget);
+      await dns.createCnameRecord(zoneId, recordName, workerTarget);
     } catch (dnsErr: any) {
-      // Se il record esiste già (409), ignoriamo e proseguiamo
       if (!dnsErr.message.includes('409')) {
         throw dnsErr;
       }
       console.log(`[domain] DNS record already exists, skipping.`);
     }
 
-    // 3. Associa dominio a Pages
-    console.log(`[domain] Linking ${customDomain} to Pages project ${project.pagesProjectName}...`);
-    try {
-      await cfPages.addProjectDomain(project.pagesProjectName!, customDomain);
-    } catch (pagesErr: any) {
-      // Anche qui, se è già associato ignoriamo
-      if (!pagesErr.message.includes('409')) {
-        throw pagesErr;
-      }
-      console.log(`[domain] Domain already linked to Pages, skipping.`);
-    }
-
-    // 4. Setup Google Tracking (GSC & GA4)
+    // 3. Setup Google Tracking (GSC & GA4)
     let measurementId = project.ga4MeasurementId;
     const siteUrl = `https://${customDomain}`;
 

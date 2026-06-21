@@ -26,6 +26,10 @@ export const projects = sqliteTable('projects', {
   ga4MeasurementId: text('ga4_measurement_id'),
   gscSiteUrl: text('gsc_site_url'),
   proofSentAt: text('proof_sent_at'),
+  // Bot pipeline metadata
+  createdVia: text('created_via').default('dashboard'), // 'bot' | 'dashboard' | 'api'
+  buildMode: text('build_mode').default('speculative'), // 'speculative' | 'demo'
+  sourcePhotoR2Key: text('source_photo_r2_key'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 

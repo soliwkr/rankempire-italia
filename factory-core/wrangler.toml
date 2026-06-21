@@ -18,7 +18,14 @@ GITHUB_TEMPLATE_OWNER = "StudioPuraLuce"
 GITHUB_TEMPLATE_REPO = "astro-rank-rent"
 FACTORY_API_URL = "https://factory-core.soliwkr.workers.dev"
 TELEGRAM_CHAT_ID = "-1002334812822"
-# RESEND_API_KEY is secret, set via .dev.vars or 'wrangler secret put'
-# API_SECRET is secret, set via .dev.vars or 'wrangler secret put'
-# CF_API_TOKEN is secret, set via .dev.vars or 'wrangler secret put'
-# TELEGRAM_BOT_TOKEN is secret, set via .dev.vars or 'wrangler secret put'
+CF_WORKERS_SUBDOMAIN = "soliwkr"
+GCP_PROJECT = "rankempire-prod"
+GCP_LOCATION = "europe-west1"
+GEMINI_MODEL = "gemini-2.0-flash-001"
+# Secrets — set via 'wrangler secret put':
+# RESEND_API_KEY
+# API_SECRET
+# CF_API_TOKEN
+# TELEGRAM_BOT_TOKEN
+# GOOGLE_SERVICE_ACCOUNT  (full JSON string of GCP service account key)
+# GOOGLE_AI_API_KEY       (Google AI Studio key for content generation)
