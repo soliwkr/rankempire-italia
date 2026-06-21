@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import { projects } from '../db/schema';
 import { GitHubService } from '../services/github';
+import { CloudflareWorkersService } from '../services/cloudflare-workers';
 import { CloudflareDNSService } from '../services/cloudflare-dns';
 import { GoogleTrackingService } from '../services/google-tracking';
-import { workerUrl, buildWranglerToml } from '../services/cloudflare-workers';
 
 type Bindings = {
   DB: D1Database;
@@ -14,7 +14,6 @@ type Bindings = {
   GITHUB_TEMPLATE_REPO: string;
   CF_API_TOKEN: string;
   CF_ACCOUNT_ID: string;
-  CF_WORKERS_SUBDOMAIN: string;
   FACTORY_API_URL: string;
   GOOGLE_CLIENT_EMAIL: string;
   GOOGLE_PRIVATE_KEY: string;
@@ -32,18 +31,17 @@ api.get('/', async (c) => {
 api.post('/', async (c) => {
   const db = drizzle(c.env.DB);
   const body = await c.req.json();
-  
   const projectId = crypto.randomUUID();
-  
+
   await db.insert(projects).values({
     id: projectId,
     slug: body.slug,
     name: body.name,
     niche: body.niche,
     location: body.location,
-    domain: body.domain ?? null,
+    domain: body.domain,
     status: 'pending',
-    createdVia: body.createdVia ?? 'api',
+    createdVia: body.createdVia ?? 'dashboard',
     buildMode: body.buildMode ?? 'speculative',
     sourcePhotoR2Key: body.sourcePhotoR2Key ?? null,
   });
@@ -55,49 +53,41 @@ api.post('/:id/deploy', async (c) => {
   const db = drizzle(c.env.DB);
   const id = c.req.param('id');
 
-  // Validazione input id (prevenire injection)
   if (!/^[0-9a-f-]{36}$/.test(id)) {
     return c.json({ error: 'Invalid project id format' }, 400);
   }
 
-  // Fetch progetto
   const project = await db.select().from(projects).where(eq(projects.id, id)).get();
   if (!project) {
     return c.json({ error: 'Project not found' }, 404);
   }
 
-  // Idempotency check (D-12)
   if (project.status === 'live') {
     return c.json({
       error: 'Project already deployed',
-      pages_url: project.pagesUrl,
-      github_repo_url: project.githubRepoUrl,
+      workerUrl: project.pagesUrl,
+      workerName: project.pagesProjectName,
     }, 409);
   }
 
-  // Validazione slug (prevenire injection nel nome repo/pages)
   if (!/^[a-z0-9-]+$/.test(project.slug)) {
     return c.json({ error: 'Invalid project slug format' }, 422);
   }
 
   const body = await c.req.json().catch(() => ({}));
 
-  // Inizializza services
   const github = new GitHubService({
     token: c.env.GITHUB_TOKEN,
     templateOwner: c.env.GITHUB_TEMPLATE_OWNER,
     templateRepo: c.env.GITHUB_TEMPLATE_REPO,
   });
 
-  const workersSubdomain = c.env.CF_WORKERS_SUBDOMAIN ?? 'soliwkr';
-
   try {
     const repoName = `rr-${project.slug}`;
     let repoOwner: string;
     let repoGithubName: string;
 
-    // Step 1: Crea repo GitHub (skip se già completato)
-    // Ordine fisso per idempotency: createRepo → salva D1 → waitForRepo
+    // Step 1: Crea repo GitHub da template
     if (project.status === 'pending') {
       const repoData = await github.createRepoFromTemplate(
         repoName,
@@ -125,7 +115,7 @@ api.post('/:id/deploy', async (c) => {
       }
     }
 
-    // Step 2: Inietta site.config.json e wrangler.toml
+    // Step 2: Inietta site.config.json
     if (project.status === 'pending' || project.status === 'repo_created') {
       const siteConfig = {
         projectId: project.id,
@@ -153,38 +143,53 @@ api.post('/:id/deploy', async (c) => {
         'Inject site configuration'
       );
 
-      // Inject wrangler.toml with correct worker name — triggers GitHub Action deploy
-      await github.createFile(
-        repoOwner,
-        repoGithubName,
-        'wrangler.toml',
-        buildWranglerToml(project.slug, c.env.FACTORY_API_URL),
-        'Configure Cloudflare Worker deployment'
-      );
-
       await db.update(projects)
         .set({ status: 'pages_linked' })
         .where(eq(projects.id, id));
     }
 
-    // Step 3: Record expected Worker URL (GitHub Action will do the actual deploy on push)
-    const wUrl = workerUrl(project.slug, workersSubdomain);
+    // Step 3: Inietta wrangler.toml con nome worker corretto.
+    // Questa push a main trigga il GitHub Actions deploy.yml che esegue:
+    //   npm run build && wrangler deploy
+    const workerName = `rr-${project.slug}`;
+    const workerToml = `name = "${workerName}"
+main = "dist/_worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+FACTORY_API_URL = "${c.env.FACTORY_API_URL}"
+`;
+
+    await github.createFile(
+      repoOwner,
+      repoGithubName,
+      'wrangler.toml',
+      workerToml,
+      `Configure worker name: ${workerName}`
+    );
+
+    // Calcola URL worker — deploy avviene in background via GitHub Actions
+    const cfWorkers = new CloudflareWorkersService({
+      apiToken: c.env.CF_API_TOKEN,
+      accountId: c.env.CF_ACCOUNT_ID,
+    });
+    const workerUrl = await cfWorkers.getWorkerUrl(workerName);
 
     await db.update(projects)
       .set({
         status: 'deploying',
-        pagesProjectName: `rr-${project.slug}`,
-        pagesUrl: wUrl,
+        pagesProjectName: workerName,
+        pagesUrl: workerUrl,
       })
       .where(eq(projects.id, id));
 
     return c.json({
       success: true,
       repoUrl: `https://github.com/${repoOwner}/${repoGithubName}`,
-      workerUrl: wUrl,
-      pagesUrl: wUrl,
+      workerUrl,
+      workerName,
       status: 'deploying',
-      note: 'GitHub Action is building and deploying — site will be live in ~2 minutes',
     });
 
   } catch (err: any) {
@@ -209,7 +214,6 @@ api.post('/:id/domain', async (c) => {
     return c.json({ error: 'Domain is required' }, 400);
   }
 
-  // Fetch progetto
   const project = await db.select().from(projects).where(eq(projects.id, id)).get();
   if (!project) {
     return c.json({ error: 'Project not found' }, 404);
@@ -219,33 +223,22 @@ api.post('/:id/domain', async (c) => {
     apiToken: c.env.CF_API_TOKEN,
     accountId: c.env.CF_ACCOUNT_ID,
   });
-  const workersSubdomain = c.env.CF_WORKERS_SUBDOMAIN ?? 'soliwkr';
 
   try {
-    // 1. Estrai Apex Domain per trovare la Zone ID
-    // Esempio: "idraulico-roma.puraluce.studio" -> "puraluce.studio"
     const domainParts = customDomain.split('.');
     const apexDomain = domainParts.slice(-2).join('.');
-
-    console.log(`[domain] Resolving zone for ${apexDomain}...`);
     const zoneId = await dns.getZoneId(apexDomain);
 
-    // 2. Crea record CNAME
     const recordName = customDomain === apexDomain ? '@' : customDomain.replace(`.${apexDomain}`, '');
-    // Workers URL as CNAME target
-    const workerTarget = `rr-${project.slug}.${workersSubdomain}.workers.dev`;
+    // CNAME punta al workers.dev URL (senza https://)
+    const workerTarget = (project.pagesUrl ?? '').replace('https://', '');
 
-    console.log(`[domain] Creating CNAME record: ${recordName} -> ${workerTarget}...`);
     try {
       await dns.createCnameRecord(zoneId, recordName, workerTarget);
     } catch (dnsErr: any) {
-      if (!dnsErr.message.includes('409')) {
-        throw dnsErr;
-      }
-      console.log(`[domain] DNS record already exists, skipping.`);
+      if (!dnsErr.message.includes('409')) throw dnsErr;
     }
 
-    // 3. Setup Google Tracking (GSC & GA4)
     let measurementId = project.ga4MeasurementId;
     const siteUrl = `https://${customDomain}`;
 
@@ -256,27 +249,24 @@ api.post('/:id/domain', async (c) => {
       });
 
       try {
-        console.log(`[domain] Setting up Google Search Console for ${siteUrl}...`);
         await googleTracking.addSiteToGSC(siteUrl);
       } catch (gscErr: any) {
-        console.error(`[domain] GSC Setup failed (non-fatal):`, gscErr.message);
+        console.error('[domain] GSC Setup failed (non-fatal):', gscErr.message);
       }
 
       if (!measurementId && c.env.GA4_ACCOUNT_ID) {
         try {
-          console.log(`[domain] Setting up GA4 for ${customDomain}...`);
           measurementId = await googleTracking.setupGA4(
             c.env.GA4_ACCOUNT_ID,
             project.name || customDomain,
             siteUrl
           );
         } catch (ga4Err: any) {
-          console.error(`[domain] GA4 Setup failed (non-fatal):`, ga4Err.message);
+          console.error('[domain] GA4 Setup failed (non-fatal):', ga4Err.message);
         }
       }
     }
 
-    // 5. Update D1
     await db.update(projects)
       .set({
         domain: customDomain,
@@ -286,11 +276,7 @@ api.post('/:id/domain', async (c) => {
       })
       .where(eq(projects.id, id));
 
-    return c.json({
-      success: true,
-      domain: customDomain,
-      status: 'live'
-    });
+    return c.json({ success: true, domain: customDomain, status: 'live' });
 
   } catch (err: any) {
     console.error('[domain] Error:', err.message);
@@ -309,7 +295,6 @@ api.patch('/:id', async (c) => {
   }
 
   const updateData: Partial<typeof projects.$inferInsert> = {};
-  
   if (body.status) updateData.status = body.status;
   if (body.renterId !== undefined) updateData.renterId = body.renterId;
   if (body.name) updateData.name = body.name;
@@ -319,10 +304,7 @@ api.patch('/:id', async (c) => {
     return c.json({ error: 'No fields to update' }, 400);
   }
 
-  await db.update(projects)
-    .set(updateData)
-    .where(eq(projects.id, id));
-
+  await db.update(projects).set(updateData).where(eq(projects.id, id));
   return c.json({ success: true, updated: Object.keys(updateData) });
 });
 

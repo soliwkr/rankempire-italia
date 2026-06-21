@@ -4,7 +4,6 @@ import { PromptService, sanitizeHtml, type AvatarType } from './prompts';
 import { qualityCheck } from './quality-check';
 import { projects, pages } from '../db/schema';
 
-// Types from seed.ts for consistency
 interface GeneratedPage {
   slug: string;
   type: string;
@@ -32,9 +31,6 @@ export class BatchGenerator {
     this.geminiEnv = geminiEnv;
   }
 
-  /**
-   * Orchestrates the full generation flow for a project.
-   */
   async generateAll(
     projectId: string,
     config: {
@@ -59,41 +55,50 @@ export class BatchGenerator {
       service_zones: 0,
       blog: 0,
       total: 0,
+      qualityRejected: 0,
     };
 
     // 1. Homepage
     const hpPrompt = this.promptService.generateHomepagePrompt(context, avatar);
     const hpGenerated = await this.callGemini(hpPrompt);
-    await this.upsertPages(projectId, hpGenerated);
-    results.homepage = hpGenerated.length;
-    results.total += hpGenerated.length;
+    const hpPassed = this.applyQualityFilter(hpGenerated);
+    results.qualityRejected += hpGenerated.length - hpPassed.length;
+    await this.upsertPages(projectId, hpPassed);
+    results.homepage = hpPassed.length;
+    results.total += hpPassed.length;
 
     // 2. Services
     if (config.services.length > 0) {
       const sPrompt = this.promptService.generateServicesPrompt(context, config.services, avatar);
       const sGenerated = await this.callGemini(sPrompt);
-      await this.upsertPages(projectId, sGenerated);
-      results.services = sGenerated.length;
-      results.total += sGenerated.length;
+      const sPassed = this.applyQualityFilter(sGenerated);
+      results.qualityRejected += sGenerated.length - sPassed.length;
+      await this.upsertPages(projectId, sPassed);
+      results.services = sPassed.length;
+      results.total += sPassed.length;
     }
 
     // 3. Zones
     if (config.zones.length > 0) {
       const zPrompt = this.promptService.generateZonesPrompt(context, config.zones, avatar);
       const zGenerated = await this.callGemini(zPrompt);
-      await this.upsertPages(projectId, zGenerated);
-      results.zones = zGenerated.length;
-      results.total += zGenerated.length;
+      const zPassed = this.applyQualityFilter(zGenerated);
+      results.qualityRejected += zGenerated.length - zPassed.length;
+      await this.upsertPages(projectId, zPassed);
+      results.zones = zPassed.length;
+      results.total += zPassed.length;
     }
 
-    // 4. Service Zones (N calls, one per service)
+    // 4. Service Zones
     if (config.services.length > 0 && config.zones.length > 0) {
       for (const service of config.services) {
         const szPrompt = this.promptService.generateServiceZonesPrompt(context, service, config.zones, avatar);
         const szGenerated = await this.callGemini(szPrompt);
-        await this.upsertPages(projectId, szGenerated);
-        results.service_zones += szGenerated.length;
-        results.total += szGenerated.length;
+        const szPassed = this.applyQualityFilter(szGenerated);
+        results.qualityRejected += szGenerated.length - szPassed.length;
+        await this.upsertPages(projectId, szPassed);
+        results.service_zones += szPassed.length;
+        results.total += szPassed.length;
       }
     }
 
@@ -101,18 +106,26 @@ export class BatchGenerator {
     if (config.includeBlog) {
       const bPrompt = this.promptService.generateBlogPrompt(context, avatar);
       const bGenerated = await this.callGemini(bPrompt);
-      await this.upsertPages(projectId, bGenerated);
-      results.blog = bGenerated.length;
-      results.total += bGenerated.length;
+      const bPassed = this.applyQualityFilter(bGenerated);
+      results.qualityRejected += bGenerated.length - bPassed.length;
+      await this.upsertPages(projectId, bPassed);
+      results.blog = bPassed.length;
+      results.total += bPassed.length;
     }
 
     return results;
   }
 
-  /**
-   * Direct call to Gemini via AI Gateway or Google AI Studio.
-   * Logic mirrored from seed.ts to ensure consistency.
-   */
+  private applyQualityFilter(generatedPages: GeneratedPage[]): GeneratedPage[] {
+    return generatedPages.filter(p => {
+      const result = qualityCheck(`${p.title} ${p.body}`);
+      if (!result.ok) {
+        console.warn(`[quality] slug=${p.slug} rejected: ${result.reasons.join('; ')}`);
+      }
+      return result.ok;
+    });
+  }
+
   private async callGemini(prompt: string): Promise<GeneratedPage[]> {
     const { GOOGLE_AI_API_KEY, CF_ACCOUNT_ID, CF_AI_GATEWAY_NAME, CF_AI_GATEWAY_TOKEN } = this.geminiEnv;
     
@@ -174,34 +187,23 @@ export class BatchGenerator {
     return parsed as GeneratedPage[];
   }
 
-  /**
-   * Writes batch of pages to D1 with idempotent upsert.
-   * Logic mirrored from seed.ts.
-   */
   private async upsertPages(
     projectId: string,
     generatedPages: GeneratedPage[]
   ): Promise<void> {
+    if (generatedPages.length === 0) return;
     const now = new Date().toISOString();
-    const rows = generatedPages
-      .filter(p => {
-        const qr = qualityCheck({ title: p.title, body: p.body });
-        if (!qr.ok) {
-          console.warn(`[quality] Skipping page "${p.slug}": ${qr.reasons.join('; ')}`);
-        }
-        return qr.ok;
-      })
-      .map(p => ({
-        id: crypto.randomUUID(),
-        projectId,
-        slug: p.slug,
-        type: p.type,
-        title: p.title,
-        body: sanitizeHtml(p.body),
-        faq: JSON.stringify(p.faq),
-        meta: JSON.stringify(p.meta),
-        createdAt: now,
-      }));
+    const rows = generatedPages.map(p => ({
+      id: crypto.randomUUID(),
+      projectId,
+      slug: p.slug,
+      type: p.type,
+      title: p.title,
+      body: sanitizeHtml(p.body),
+      faq: JSON.stringify(p.faq),
+      meta: JSON.stringify(p.meta),
+      createdAt: now,
+    }));
 
     await this.db
       .insert(pages)

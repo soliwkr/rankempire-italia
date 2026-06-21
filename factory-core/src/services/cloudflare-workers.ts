@@ -1,43 +1,35 @@
-export interface WorkersConfig {
+export interface CloudflareWorkersConfig {
   apiToken: string;
   accountId: string;
-  workerSubdomain: string; // e.g. "soliwkr"
 }
 
-export function workerUrl(slug: string, subdomain: string): string {
-  return `https://rr-${slug}.${subdomain}.workers.dev`;
-}
+export class CloudflareWorkersService {
+  private subdomain: string | null = null;
 
-export function workerName(slug: string): string {
-  return `rr-${slug}`;
-}
+  constructor(private config: CloudflareWorkersConfig) {}
 
-export function buildWranglerToml(slug: string, factoryApiUrl: string): string {
-  return `name = "${workerName(slug)}"
-main = "dist/_worker.js/index.js"
-compatibility_date = "2024-11-01"
-compatibility_flags = ["nodejs_compat"]
+  private async fetchSubdomain(): Promise<string> {
+    if (this.subdomain) return this.subdomain;
 
-[vars]
-FACTORY_API_URL = "${factoryApiUrl}"
-`;
-}
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${this.config.accountId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiToken}`,
+        },
+      }
+    );
 
-/**
- * Checks if a Worker with the given name exists.
- * Used for idempotency — skip creation if already deployed.
- */
-export async function workerExists(
-  config: WorkersConfig,
-  slug: string
-): Promise<boolean> {
-  const name = workerName(slug);
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/workers/scripts/${name}`,
-    {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${config.apiToken}` },
+    if (response.ok) {
+      const data = await response.json() as any;
+      this.subdomain = data?.result?.subdomain ?? null;
     }
-  );
-  return res.status === 200;
+
+    return this.subdomain ?? this.config.accountId;
+  }
+
+  async getWorkerUrl(workerName: string): Promise<string> {
+    const subdomain = await this.fetchSubdomain();
+    return `https://${workerName}.${subdomain}.workers.dev`;
+  }
 }
