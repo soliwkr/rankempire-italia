@@ -1,0 +1,24 @@
+name = "rank-rent-bot-chris"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "cc03849214564c358b59c7536ecaf9f9"
+
+[[r2_buckets]]
+binding = "R2_PHOTOS"
+bucket_name = "scout-photos"
+
+[vars]
+GCP_PROJECT = "rankempire-prod"
+GCP_LOCATION = "europe-west1"
+GEMINI_MODEL = "gemini-2.0-flash-001"
+FACTORY_API_URL = "https://factory-core.soliwkr.workers.dev"
+CF_WORKERS_SUBDOMAIN = "soliwkr"
+
+# Secrets — set via: wrangler secret put <NAME>
+# TELEGRAM_BOT_TOKEN
+# GOOGLE_SERVICE_ACCOUNT  (full JSON string of GCP service account key)
+# FACTORY_API_SECRET      (Bearer token for factory-core API_SECRET)

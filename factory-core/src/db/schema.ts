@@ -26,6 +26,10 @@ export const projects = sqliteTable('projects', {
   ga4MeasurementId: text('ga4_measurement_id'),
   gscSiteUrl: text('gsc_site_url'),
   proofSentAt: text('proof_sent_at'),
+  // Campi bot
+  createdVia: text('created_via').default('dashboard'),
+  buildMode: text('build_mode').default('speculative'),
+  sourcePhotoR2Key: text('source_photo_r2_key'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -50,18 +54,15 @@ export const factorySettings = sqliteTable('factory_settings', {
   version: text('version').notNull(),
 });
 
-// Tabella pages: contenuto pre-generato da Phase 3 per ogni sito rank-rent
-// body è HTML generato esclusivamente da Phase 3 (Gemini via factory-core) — non da input utente
-// NOTA SICUREZZA: body non deve contenere <script> tag — sanitizzazione applicata in Phase 3 prima della scrittura
 export const pages = sqliteTable('pages', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull().references(() => projects.id),
   slug: text('slug').notNull(),
-  type: text('type').notNull(), // 'homepage'|'service'|'zone'|'service_zone'|'blog'
+  type: text('type').notNull(),
   title: text('title').notNull(),
   body: text('body').notNull(),
-  faq: text('faq').notNull().default('[]'),   // JSON string: [{ question, answer }]
-  meta: text('meta').notNull().default('{}'), // JSON string: { description, canonical }
+  faq: text('faq').notNull().default('[]'),
+  meta: text('meta').notNull().default('{}'),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => ({
   projectSlugUniq: uniqueIndex('pages_project_slug_uniq').on(table.projectId, table.slug),
