@@ -4,6 +4,8 @@ node_modules
 .gsd
 .gsd-id
 .mcp.json
+*.zip
+backend.log
 .bg-shell/
 .DS_Store
 Thumbs.db
