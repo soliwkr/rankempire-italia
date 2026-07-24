@@ -62,40 +62,37 @@ export class BatchGenerator {
     // 1. Homepage — slug always 'homepage' (Gemini's slug field is ignored here)
     const hpPrompt = this.promptService.generateHomepagePrompt(context, avatar);
     const hpGenerated = await this.callGemini(hpPrompt);
-    const hpPassed = this.applyQualityFilter(hpGenerated);
-    results.qualityRejected += hpGenerated.length - hpPassed.length;
-    await this.upsertPages(projectId, hpPassed, () => 'homepage');
-    results.homepage = hpPassed.length;
-    results.total += hpPassed.length;
+    const hp = await this.filterAndUpsert(projectId, hpGenerated, () => 'homepage');
+    results.qualityRejected += hp.rejected;
+    results.homepage = hp.passed;
+    results.total += hp.passed;
 
     // 2. Services — slug = slugify(serviceName), positional match to config.services
     if (config.services.length > 0) {
       const sPrompt = this.promptService.generateServicesPrompt(context, config.services, avatar);
       const sGenerated = await this.callGemini(sPrompt);
-      const sPassed = this.applyQualityFilter(sGenerated);
-      results.qualityRejected += sGenerated.length - sPassed.length;
-      await this.upsertPages(
+      const s = await this.filterAndUpsert(
         projectId,
-        sPassed,
-        (_p, i) => slugify(config.services[i] ?? sPassed[i]?.slug ?? '')
+        sGenerated,
+        (_p, i) => slugify(config.services[i] ?? sGenerated[i]?.slug ?? '')
       );
-      results.services = sPassed.length;
-      results.total += sPassed.length;
+      results.qualityRejected += s.rejected;
+      results.services = s.passed;
+      results.total += s.passed;
     }
 
     // 3. Zones — slug = `zone/${slugify(zoneName)}`, positional match to config.zones
     if (config.zones.length > 0) {
       const zPrompt = this.promptService.generateZonesPrompt(context, config.zones, avatar);
       const zGenerated = await this.callGemini(zPrompt);
-      const zPassed = this.applyQualityFilter(zGenerated);
-      results.qualityRejected += zGenerated.length - zPassed.length;
-      await this.upsertPages(
+      const z = await this.filterAndUpsert(
         projectId,
-        zPassed,
-        (_p, i) => `zone/${slugify(config.zones[i] ?? zPassed[i]?.slug ?? '')}`
+        zGenerated,
+        (_p, i) => `zone/${slugify(config.zones[i] ?? zGenerated[i]?.slug ?? '')}`
       );
-      results.zones = zPassed.length;
-      results.total += zPassed.length;
+      results.qualityRejected += z.rejected;
+      results.zones = z.passed;
+      results.total += z.passed;
     }
 
     // 4. Service Zones — slug = `${slugify(service)}/${slugify(zone)}`, positional per service loop
@@ -103,15 +100,14 @@ export class BatchGenerator {
       for (const service of config.services) {
         const szPrompt = this.promptService.generateServiceZonesPrompt(context, service, config.zones, avatar);
         const szGenerated = await this.callGemini(szPrompt);
-        const szPassed = this.applyQualityFilter(szGenerated);
-        results.qualityRejected += szGenerated.length - szPassed.length;
-        await this.upsertPages(
+        const sz = await this.filterAndUpsert(
           projectId,
-          szPassed,
+          szGenerated,
           (_p, i) => slugifyServiceZone(service, config.zones[i] ?? '')
         );
-        results.service_zones += szPassed.length;
-        results.total += szPassed.length;
+        results.qualityRejected += sz.rejected;
+        results.service_zones += sz.passed;
+        results.total += sz.passed;
       }
     }
 
@@ -119,24 +115,66 @@ export class BatchGenerator {
     if (config.includeBlog) {
       const bPrompt = this.promptService.generateBlogPrompt(context, avatar);
       const bGenerated = await this.callGemini(bPrompt);
-      const bPassed = this.applyQualityFilter(bGenerated);
-      results.qualityRejected += bGenerated.length - bPassed.length;
-      await this.upsertPages(projectId, bPassed, (p) => slugify(p.slug));
-      results.blog = bPassed.length;
-      results.total += bPassed.length;
+      const b = await this.filterAndUpsert(projectId, bGenerated, (p) => slugify(p.slug));
+      results.qualityRejected += b.rejected;
+      results.blog = b.passed;
+      results.total += b.passed;
     }
 
     return results;
   }
 
-  private applyQualityFilter(generatedPages: GeneratedPage[]): GeneratedPage[] {
-    return generatedPages.filter(p => {
-      const result = qualityCheck(`${p.title} ${p.body}`);
+  /**
+   * Computes slugs while indices are still aligned to config arrays,
+   * then applies quality filter, then upserts the survivors.
+   */
+  private async filterAndUpsert(
+    projectId: string,
+    generatedPages: GeneratedPage[],
+    slugBuilder: (page: GeneratedPage, index: number) => string
+  ): Promise<{ passed: number; rejected: number }> {
+    if (generatedPages.length === 0) return { passed: 0, rejected: 0 };
+
+    // Slug computed BEFORE filtering so positional index matches config
+    const paired = generatedPages.map((p, i) => ({ page: p, slug: slugBuilder(p, i) }));
+
+    const accepted = paired.filter(({ page }) => {
+      const result = qualityCheck(`${page.title} ${page.body}`);
       if (!result.ok) {
-        console.warn(`[quality] slug=${p.slug} rejected: ${result.reasons.join('; ')}`);
+        console.warn(`[quality] slug=${page.slug} rejected: ${result.reasons.join('; ')}`);
       }
       return result.ok;
     });
+
+    if (accepted.length > 0) {
+      const now = new Date().toISOString();
+      const rows = accepted.map(({ page, slug }) => ({
+        id: crypto.randomUUID(),
+        projectId,
+        slug,
+        type: page.type,
+        title: page.title,
+        body: sanitizeHtml(page.body),
+        faq: JSON.stringify(page.faq),
+        meta: JSON.stringify(page.meta),
+        createdAt: now,
+      }));
+
+      await this.db
+        .insert(pages)
+        .values(rows)
+        .onConflictDoUpdate({
+          target: [pages.projectId, pages.slug],
+          set: {
+            title: sql`excluded.title`,
+            body: sql`excluded.body`,
+            faq: sql`excluded.faq`,
+            meta: sql`excluded.meta`,
+          },
+        });
+    }
+
+    return { passed: accepted.length, rejected: generatedPages.length - accepted.length };
   }
 
   private async callGemini(prompt: string): Promise<GeneratedPage[]> {
@@ -200,43 +238,4 @@ export class BatchGenerator {
     return parsed as GeneratedPage[];
   }
 
-  /**
-   * Writes batch of pages to D1 with idempotent upsert.
-   * The slug is deterministically computed by `slugBuilder` (positional
-   * mapping back to the request context) so that Gemini's emitted `slug`
-   * field cannot drift from the canonical form expected by the Astro
-   * template.
-   */
-  private async upsertPages(
-    projectId: string,
-    generatedPages: GeneratedPage[],
-    slugBuilder: (page: GeneratedPage, index: number) => string
-  ): Promise<void> {
-    if (generatedPages.length === 0) return;
-    const now = new Date().toISOString();
-    const rows = generatedPages.map((p, i) => ({
-      id: crypto.randomUUID(),
-      projectId,
-      slug: slugBuilder(p, i),
-      type: p.type,
-      title: p.title,
-      body: sanitizeHtml(p.body),
-      faq: JSON.stringify(p.faq),
-      meta: JSON.stringify(p.meta),
-      createdAt: now,
-    }));
-
-    await this.db
-      .insert(pages)
-      .values(rows)
-      .onConflictDoUpdate({
-        target: [pages.projectId, pages.slug],
-        set: {
-          title: sql`excluded.title`,
-          body: sql`excluded.body`,
-          faq: sql`excluded.faq`,
-          meta: sql`excluded.meta`,
-        },
-      });
-  }
 }
