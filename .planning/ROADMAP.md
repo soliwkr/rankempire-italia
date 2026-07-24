@@ -14,12 +14,12 @@ Brownfield build on top of a deployed but incomplete Cloudflare-native factory. 
 - [x] **Phase 2: Astro Template Completion** - Full routing, schema.org markup, sitemap, and D1 data fetching replacing Directus (completed 2026-04-25)
 - [x] **Phase 3: AI Content Generation** - 105-page programmatic content via Gemini 2.5 Flash with avatar-based copywriting (completed 2026-04-26)
 - [x] **Phase 4: Deploy Pipeline** - Wizard backend triggers GitHub repo creation, Cloudflare Pages deploy, and config injection (completed 2026-04-27)
-- [ ] **Phase 5: Custom Domain Go-Live** - Each deployed site gets its own custom domain on Cloudflare Pages
-- [ ] **Phase 6: Lead Capture** - GDPR-compliant DOI form, D1 write, Resend verification, avatar tagging, Telegram notification
-- [ ] **Phase 7: SEO & Tracking Automation** - GA4 auto-create, GSC verify + sitemap submit, SERP cron, Telegram drop alert
-- [ ] **Phase 8: Proof Package & Outreach Trigger** - Ghost lead accumulation, PDF proof package, outreach threshold notification
-- [ ] **Phase 9: Dashboard Core** - Project list with real data, Kanban with D1 persistence, auth gate
-- [ ] **Phase 10: Dashboard KPIs & Wizard UI** - Real KPI data from GSC/GA4/D1, wizard multi-step UI
+- [x] **Phase 5: Custom Domain Go-Live** - DNS service, domain assignment endpoint, GA4/GSC integration (completed ~2026-05, backend 85%)
+- [x] **Phase 6: Lead Capture** - DOI completo, honeypot, Resend verification, avatar tagging, Telegram notification (completed ~2026-05, backend 100%)
+- [ ] **Phase 7: SEO & Tracking Automation** - GA4+GSC services ok; SERP cron, rank tracking e drop alert mancanti (~40%)
+- [ ] **Phase 8: Proof Package & Outreach Trigger** - Trigger notification ok; PDF proof package e threshold logic mancanti (~30%)
+- [ ] **Phase 9: Dashboard Core** - Stats API ok; Kanban persistence e auth gate mancanti (~50%)
+- [ ] **Phase 10: Dashboard KPIs & Wizard UI** - Solo stats base; wizard UI e real KPI aggregation mancanti (~20%)
 
 ## Phase Details
 
@@ -96,14 +96,23 @@ Plans:
 - [x] 04-06-PLAN.md — Smoke test E2E + checkpoint visivo GitHub repo + CF Pages + idempotency 409 (Wave 4) (completed 2026-04-27)
 
 ### Phase 5: Custom Domain Go-Live
-**Goal**: Each deployed rank-rent site is accessible via its own custom domain (e.g., `idraulicoformia.it`) configured on Cloudflare Pages
+**Goal**: Each deployed rank-rent site is accessible via its own custom domain (e.g., `idraulicoformia.it`) configured on Cloudflare
 **Depends on**: Phase 4
 **Requirements**: SITE-05
 **Success Criteria** (what must be TRUE):
   1. After domain assignment, the site is reachable at the custom domain over HTTPS with a valid TLS certificate
   2. The `www` subdomain and apex domain both resolve to the Cloudflare Pages project
   3. The custom domain is recorded in the project's D1 row for downstream use (GSC, GA4, proof package)
-**Plans**: TBD
+**Plans**: Implementati ad-hoc (nessun piano formale)
+
+**Codice esistente:**
+- `factory-core/src/services/cloudflare-dns.ts` — CloudflareDNSService (getZoneId, createCnameRecord)
+- `factory-core/src/api/projects.ts` — POST /:id/domain endpoint
+- `factory-core/src/services/google-tracking.ts` — GA4 + GSC setup integrato nel domain assignment
+- `factory-core/migrations/0005_*.sql` — colonne ga4_measurement_id, gsc_site_url
+- `factory-core/scripts/test-domain-assignment.ts` — smoke test
+
+**Mancante:** validazione dominio, www redirect esplicito (gestito da Cloudflare automaticamente)
 
 ### Phase 6: Lead Capture
 **Goal**: Every deployed site has a working GDPR-compliant lead form: submissions write to D1 with pending status, trigger a DOI verification email, verify on click, tag by avatar, and notify the operator via Telegram
@@ -115,8 +124,15 @@ Plans:
   3. The lead receives a verification email via Resend with a working token link
   4. Clicking the verification link sets `doi_status = verified` in D1
   5. The operator receives a Telegram notification (via rank-rent-bot-chris) containing the lead's project, avatar tag, and timestamp
-**Plans**: TBD
+**Plans**: Implementati ad-hoc (nessun piano formale)
 **UI hint**: yes
+
+**Codice esistente (completo):**
+- `factory-core/src/api/leads.ts` — POST /api/leads (honeypot, Zod validation, DOI pending), GET /verify, PATCH /:id
+- `factory-core/src/services/email.ts` — Resend sendVerificationEmail
+- `factory-core/src/services/telegram.ts` — notifyLeadVerified, notifyProofReady
+- `factory-core/migrations/0003_*.sql` — verification_token
+- `factory-core/migrations/0008_add_leads_avatar.sql` — avatar column
 
 ### Phase 7: SEO & Tracking Automation
 **Goal**: Each new site automatically gets a GA4 property, GSC domain verification with sitemap submission, and a weekly SERP position cron that fires a Telegram alert on significant drops
@@ -165,15 +181,26 @@ Plans:
 
 **Execution Order:** 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Factory-Core Foundation | 4/4 | Complete | 2026-04-25 |
-| 2. Astro Template Completion | 5/5 | Complete | 2026-04-25 |
-| 3. AI Content Generation | 3/3 | Complete | 2026-04-26 |
-| 4. Deploy Pipeline | 6/6 | Complete | 2026-04-27 |
-| 5. Custom Domain Go-Live | 0/TBD | Not started | - |
-| 6. Lead Capture | 0/TBD | Not started | - |
-| 7. SEO & Tracking Automation | 0/TBD | Not started | - |
-| 8. Proof Package & Outreach Trigger | 0/TBD | Not started | - |
-| 9. Dashboard Core | 0/TBD | Not started | - |
-| 10. Dashboard KPIs & Wizard UI | 0/TBD | Not started | - |
+| Phase | Plans Complete | Status | Completeness | Completed |
+|-------|----------------|--------|--------------|-----------|
+| 1. Factory-Core Foundation | 4/4 | Complete | 100% | 2026-04-25 |
+| 2. Astro Template Completion | 5/5 | Complete | 100% | 2026-04-25 |
+| 3. AI Content Generation | 3/3 | Complete | 100% | 2026-04-26 |
+| 4. Deploy Pipeline | 6/6 | Complete | 100% | 2026-04-27 |
+| 5. Custom Domain Go-Live | ad-hoc | Backend done | 85% | ~2026-05 |
+| 6. Lead Capture | ad-hoc | Backend done | 100% | ~2026-05 |
+| 7. SEO & Tracking Automation | ad-hoc | Partial | 40% | - |
+| 8. Proof Package & Outreach Trigger | ad-hoc | Partial | 30% | - |
+| 9. Dashboard Core | ad-hoc | Partial | 50% | - |
+| 10. Dashboard KPIs & Wizard UI | - | Minimal | 20% | - |
+
+### Features fuori roadmap (implementate ad-hoc)
+
+| Feature | Status | Note |
+|---------|--------|------|
+| Renter API (multi-tenant) | Completo | Auth JWT, isolamento progetti/pagine/media |
+| Batch Generator | Completo | Orchestrazione multi-page con quality check |
+| R2 Media Storage | Completo | Upload multi-tenant con D1 tracking |
+| Slug Normalization | Completo | Accenti italiani, URL-safe |
+| Quality Check | Completo | Validazione contenuti AI in italiano |
+| Deploy Workers (ex Pages) | Completo | Switch deploy da CF Pages a CF Workers |

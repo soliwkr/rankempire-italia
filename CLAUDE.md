@@ -21,11 +21,11 @@ Preferisco risposte diritte, in italiano, senza giri di parole né complimenti.
 ## Lo stato reale (aggiornato 24/07/2026)
 
 **Il dato che conta: 7 sistemi rank-and-rent costruiti in 5 mesi. 0 lead. 0 renters. 0 clienti fatturati.**
-Il collo di bottiglia non è mai stato tecnico. Le fasi che mancano sono di monetizzazione.
+Il collo di bottiglia non è mai stato tecnico. Le fasi che mancano sono di vendita.
 
 | Asset | Stato |
 |---|---|
-| `rankempire-italia` | **Questo repo.** Il motore. 4 fasi su 10, fermo a Phase 5 (custom domain go-live) |
+| `rankempire-italia` | **Questo repo.** Il motore. Fasi 1-6 backend done, 7-10 parziali (~65%). Renter API e batch generator completi fuori roadmap. |
 | `astro-rank-rent` | Template ufficiale dei siti (ha `src/lib/slug.ts`, aggiornato 10/07) |
 | `ristrutturazioniformia.it` | Dominio **già indicizzato** (335 impression, pos. media 6,9). Guscio: contenuti falsi da rimuovere |
 | `agenziaimmobiliareformia.it` | Sito nuovo pronto (Astro + D1 lead). Cliente ★ fondatore: Vittorio Piscitelli |
