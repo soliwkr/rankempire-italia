@@ -52,18 +52,26 @@ qualsiasi pagina (cfr. `CLAUDE.md`, regola 1).
 - Modulo **Google Maps** → schede locali strutturate (nome, rating, n. recensioni)
 - Costo per query molto basso, chiave già presente. **Prima scelta.**
 
-### Vertex AI — crediti disponibili: 900 € fino al 2027 ✅
-Il free tier copre già molto:
+### Vertex AI con grounding — la ragione architetturale del market-intel ✅
+**Crediti disponibili: 900 € fino al 2027.** Free tier:
 - **Vertex AI Search: 10.000 query/mese gratis**
-- **Gemini 3: 5.000 prompt di grounding/mese gratis** (grounding con Google Search)
+- **Gemini: 5.000 prompt di grounding/mese gratis** (grounding con Google Search)
+
+Il grounding non è un optional: **è la ragione per cui il market-intel gira su Vertex anziché
+sull'AI Gateway.** La generazione pagine (Gemini Flash, content bulk) resta su AI Gateway
+Cloudflare — è un task di produzione testi che non ha bisogno di dati freschi. L'analisi di
+mercato invece ha bisogno di dati reali e aggiornati (chi opera dove, quanti sono, che SERP
+c'è adesso): il grounding con Google Search è ciò che li fornisce senza scraping.
+
+**Due pipeline, due infrastrutture:**
+| Pipeline | Modello | Dove gira | Perché |
+|---|---|---|---|
+| Generazione pagine sito | Gemini Flash | Cloudflare AI Gateway | Caching, rate limiting, logging. Nessun bisogno di dati freschi |
+| Market intelligence | Gemini con grounding | Vertex AI (GCP) | Grounding con Google Search per dati reali. Coperto dai crediti |
 
 Con 900 € sopra al free tier, l'analisi di mercato può girare quasi a costo zero per un anno.
 Il repo ha già `vertex-auth.ts` funzionante (JWT RS256 + service account) → **copiare quello,
 non riscriverlo**.
-
-**Da verificare in console prima di progettare:** i crediti coprono Vertex AI in generale o
-solo Agent Builder / Gemini Enterprise Agent Platform? Se coprono Vertex in generale, si
-possono usare anche sulle chiamate Gemini che `factory-core` già fa.
 
 ### Da NON usare
 - **DataForSEO** — utile solo se servono i volumi veri. Per ora non sono il dato che blocca.
@@ -86,7 +94,7 @@ POST /analyze  { niche, city }
   → classifica i domini in prima pagina (directory / locale / nazionale)
   → conta operatori distinti da Maps
   → applica la regola dei 4
-  → (opzionale) Gemini con grounding per sintesi qualitativa
+  → Vertex Gemini con grounding Google Search per sintesi qualitativa
   → salva su D1 per storico
   → risponde JSON
 ```
