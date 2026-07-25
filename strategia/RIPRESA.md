@@ -49,33 +49,25 @@ conflitto di tooling:
 
 **Traduzione:** ti si è rotto il trapano a metà lavoro. Il sistema che stavi costruendo è sano.
 
-## 2. Dove sei davvero: ~65%, e più avanti di quanto pensavi
-
-Audit del 24/07/2026: il codice nel repo è molto più avanti di quanto ROADMAP/STATE
-registrassero. Tra maggio e luglio sono state implementate ad-hoc (senza piani formali)
-le fasi 5-6 e pezzi delle 7-10, più feature fuori roadmap.
+## 2. Dove sei davvero: 40%, ma il 40% difficile
 
 | Fase | Cosa | Stato |
 |---|---|---|
 | 1 — Factory-Core Foundation | auth, schema D1, env config | ✅ 25/04 |
 | 2 — Astro Template | routing completo, schema.org, sitemap, D1 fetch | ✅ 25/04 |
 | 3 — AI Content Generation | **105 pagine** programmatiche, copywriting avatar-based | ✅ 26/04 |
-| 4 — Deploy Pipeline | repo GitHub + CF Workers + config injection, state machine | ✅ 27/04 |
-| 5 — Custom Domain Go-Live | DNS service, endpoint, GA4/GSC integration | ✅ ~05/26 (85%) |
-| 6 — Lead Capture | DOI completo, honeypot, Resend, avatar, Telegram | ✅ ~05/26 (100%) |
-| 7 — SEO & Tracking | GA4+GSC services ok; **manca:** SERP cron, rank tracking | 🟡 40% |
-| 8 — Proof Package | Trigger notification ok; **manca:** PDF, threshold | 🟡 30% |
-| 9 — Dashboard Core | Stats API ok; **manca:** Kanban, auth gate | 🟡 50% |
-| 10 — KPIs & Wizard | Solo stats base; **manca:** real KPI, wizard | 🔴 20% |
+| 4 — Deploy Pipeline | repo GitHub + CF Pages + config injection, state machine, idempotenza | ✅ 27/04 |
+| **5 — Custom Domain Go-Live** | **dominio custom su ogni sito** | ⏸ **FERMO QUI** |
+| 6 — Lead Capture | DOI GDPR, D1, Resend, avatar tagging, Telegram | ⏸ |
+| 7 — SEO & Tracking | GA4 auto, **GSC verify + sitemap auto**, SERP cron | ⏸ |
+| 8 — Proof Package | ghost lead → PDF di prova → trigger outreach | ⏸ |
+| 9-10 — Dashboard | progetti, Kanban, KPI, wizard UI | ⏸ |
 
-**Fuori roadmap (completi):** Renter API multi-tenant, Batch Generator, R2 Media Storage,
-Slug Normalization, Quality Check, switch deploy Pages→Workers.
+18 piani su 18 eseguiti. Ogni fase ha PLAN, CONTEXT, SUMMARY, VERIFICATION.
 
-18 piani formali (fasi 1-4) + implementazioni ad-hoc (fasi 5-6 + bonus).
-
-**Il collo di bottiglia resta lo stesso:** 0 lead, 0 renters, 0 clienti fatturati.
-Le fasi 7-10 sono parziali ma **non bloccanti per la prima vendita** — servono dominio
-live (fatto), lead capture (fatto), e un cliente che paga.
+**Le 6 fasi mancanti sono, nell'ordine esatto, la monetizzazione:**
+dominio → lead → tracking → prova → outreach → gestione.
+Ti sei fermato sulla soglia, con il piano per attraversarla già scritto.
 
 ## 3. Ordine di ripresa
 
@@ -88,18 +80,17 @@ Finché 4 sistemi di agenti convivono nella stessa cartella, il deragliamento si
 - Pulisci le cartelle spazzatura: `grezzo-poi-cancella/`, `temp-debug/`, `temp-template/`,
   `.planning-backup/`, `.planning.restart.bak/`.
 
-### 3.2 Phase 5 — Custom Domain Go-Live ✅ BACKEND DONE
-Il backend è completo: DNS service, endpoint domain assignment, integrazione GA4/GSC.
-- `factory-core/src/services/cloudflare-dns.ts` — getZoneId, createCnameRecord
-- `factory-core/src/api/projects.ts` — POST /:id/domain
-- Mancano solo piani formali e test E2E di produzione.
+### 3.2 Phase 5 — Custom Domain Go-Live
+È il punto di ripartenza previsto dalla roadmap **ed è esattamente ciò che ti serve ora**:
+il dominio che stai comprando per autospurghi.
+- `factory-core/src/services/cloudflare-dns.ts` esiste già.
+- Obiettivo: da `*.pages.dev` a dominio proprio, automatizzato.
+- Manca `05-CONTEXT.md`/`05-PLAN.md` completi: vanno generati prima di eseguire.
 
-### 3.3 Phase 6 — Lead Capture ✅ BACKEND DONE
-Il backend è completo: DOI flow, honeypot, Resend verification, avatar tagging, Telegram.
-- `factory-core/src/api/leads.ts` — POST (submit), GET /verify, PATCH
-- `factory-core/src/services/email.ts` + `telegram.ts`
-- **Ma:** `factory-db.leads` ha ancora **0 righe**. Nessun sito ha mai catturato un lead.
-- Principio invariante: **scrivi su D1 PRIMA di qualsiasi inoltro** (email/Telegram).
+### 3.3 Phase 6 — Lead Capture
+`factory-db.leads` ha **0 righe**. Nessun sito ha mai catturato un lead.
+Principio invariante: **scrivi su D1 PRIMA di qualsiasi inoltro** (email/Telegram).
+Il contatore lead è ciò che si vende all'inquilino: se un lead si perde, si perde la prova.
 
 ### 3.4 Phase 7 — SEO & Tracking
 `gsc_site_url` è NULL su tutti i progetti: **nessun sito è mai stato collegato a Search Console.**

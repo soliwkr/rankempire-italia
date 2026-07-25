@@ -1,25 +1,30 @@
-# Strategia — rete rank & rent Sud Pontino
+# Strategia — rankempire-italia
 
-Documenti di strategia della rete. Il "cosa e perché"; il "come" sta nel codice.
+Documenti di strategia e piani. Aggiornato: 25 luglio 2026.
 
-| File | Cosa contiene |
-|---|---|
-| `NETWORK-SUD-PONTINO.md` | Il progetto della rete: densità operatori per nicchia, mappa dei compratori di lead, ordine di attacco |
-| `ENGINE.md` | Motore autoalimentante a 3 cicli, moat, sequenza di accensione |
-| `RIPRESA.md` | Diagnosi dell'incidente tooling di aprile ⚠️ da aggiornare: lo stato non è al 40% |
-| `MERGE-PLAN.md` | Piano di riorganizzazione repo ⚠️ in gran parte già eseguito il 24/07 |
-| `pitch-triplo-inevitabile.md` | Pitch ★★★ per Vittorio Piscitelli (conversazione del giorno 90) |
-| `proposta-fondatore-inserto-dati-mercato.md` | Inserto dati di mercato per la proposta ★ fondatore |
-| `keyword/` | 2.155 keyword su 7 nicchie + liste pronte per Keyword Planner |
+## Ordine di lettura
 
-## Regola che governa tutto
+1. **NETWORK-SUD-PONTINO.md** — il progetto: densità operatori, compratori lead, ordine di attacco
+2. **ROADMAP-DEV.md** — piano sviluppo 3 fasi (A accumulo→set, B monetizzazione→ott, C scala 2027)
+3. **PIANO-TECNICO-A2.md** — 🔴 debiti bloccanti sul percorso del lead (TASK 1 = bug DOI critico)
+4. **OUTREACH.md** — acquisizione in 2 fasi (accumulo asset ora, vendita post-trasloco)
+5. **CLIMBO-INTEGRATION.md** — Climbo come componente Fase B (consegna lead multicanale)
+6. **MARKET-INTEL.md** — brief worker ricerca mercato (regola dei 4 operatori)
+7. **ENGINE.md** — motore autoalimentante a 3 cicli
+8. **RIPRESA.md** — diagnosi incidente tooling aprile (⚠️ stato datato: vedi ROADMAP)
+9. **MERGE-PLAN.md** — riorganizzazione repo (⚠️ già eseguito il 24/07)
+10. **pitch-triplo-inevitabile.md** — pitch ★★★ per Vittorio
+11. **proposta-fondatore-inserto-dati-mercato.md** — inserto proposta ★
 
-**Meno di 4 operatori attivi sul territorio = nessun mercato per il lead.**
-Verificare la densità PRIMA di generare qualsiasi pagina. Questa regola è costata
-52 pagine su autospurghi (1 solo operatore su 8 comuni) prima di essere scoperta.
+## Le regole permanenti (in CLAUDE.md, root)
 
-## Da aggiornare
+1. Regola dei 4 operatori (meno di 4 = niente mercato)
+2. Niente contenuti falsi
+3. Lead su D1 prima di ogni inoltro
+4. Il portale resta di Studio Pura Luce
+5. Un nodo alla volta (N+1 quando N ha un tenant pagante)
+6. Solo Claude Code, niente GSD
+7. "Fatto" = deployato e produce dati
 
-- `RIPRESA.md` e `CLAUDE.md` dicono che il progetto è fermo a Phase 5. **Non è vero**:
-  i commit mostrano lead API, GSC/GA4 automation, proof package, multi-tenancy.
-  Vanno corretti dopo aver confrontato commit e `.planning/`.
+## keyword/
+2.155 kw Sud Pontino + 6.617 kw rifiuti-metalli, con volumi KP scaricati.
