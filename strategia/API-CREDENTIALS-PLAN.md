@@ -82,7 +82,20 @@ Già implementato in `google-tracking.ts`, chiamato da `projects.ts` riga 245.
 ### C2. OVHcloud (registrazione domini)
 
 **Cosa fa:** registra domini `.it` programmaticamente per i siti rank-and-rent.
-NON implementato nel codice — va scritto `src/services/ovhcloud.ts`.
+Oggi i domini si comprano a mano — questo servizio automatizza il flusso.
+NON implementato nel codice — va scritto `src/services/ovh-domains.ts`.
+
+**Dove si innesta:** nel flusso "assegna dominio" di `projects.ts`, PRIMA della
+creazione CNAME su Cloudflare. Il servizio nuovo si inserisce così:
+
+```
+POST /api/projects/:id/domain  { customDomain: "ristrutturazioniformia.it" }
+  → [NUOVO] OvhDomainsService.registerDomain(domain)     ← compra il dominio
+  → [NUOVO] OvhDomainsService.setNameservers(domain, CF)  ← punta a Cloudflare NS
+  → [ESISTENTE] CloudflareDNSService.createCnameRecord()  ← crea CNAME
+  → [ESISTENTE] CloudflarePagesService.addDomain()         ← collega a Pages
+  → [ESISTENTE] GoogleTrackingService.addSiteToGSC()       ← registra su GSC
+```
 
 **Variabili necessarie:**
 
@@ -91,33 +104,82 @@ NON implementato nel codice — va scritto `src/services/ovhcloud.ts`.
 | `OVH_APP_KEY` | Application Key | Secret |
 | `OVH_APP_SECRET` | Application Secret | Secret |
 | `OVH_CONSUMER_KEY` | Consumer Key (con grant sui domini) | Secret |
-| `OVH_ENDPOINT` | `ovh-eu` | Var (wrangler.toml) |
+
+**Autenticazione OVH:** le 3 credenziali servono tutte. Ogni richiesta API è firmata
+con un hash HMAC di `APP_SECRET + CONSUMER_KEY + method + URL + body + timestamp`.
+Il Consumer Key è legato ai permessi (ACL) concessi al momento della creazione.
 
 **Come ottenere:**
 1. [api.ovh.com/createApp](https://api.ovh.com/createApp/) → crea app, ricevi AK + AS
-2. Richiedi Consumer Key con diritti `GET/POST/PUT /domain/*`, `GET/POST /order/*`
-3. Valida il CK seguendo il link di conferma
+2. Richiedi Consumer Key con questi ACL:
+   ```
+   GET    /domain/*
+   POST   /domain/*
+   PUT    /domain/*
+   GET    /order/cart/*
+   POST   /order/cart
+   POST   /order/cart/*
+   DELETE /order/cart/*
+   ```
+3. Valida il CK seguendo il link di conferma OVH
 4. `wrangler secret put OVH_APP_KEY --name factory-core`
 5. `wrangler secret put OVH_APP_SECRET --name factory-core`
 6. `wrangler secret put OVH_CONSUMER_KEY --name factory-core`
 
-**Endpoint principali da usare:**
-- `POST /order/cart` → crea carrello
-- `POST /order/cart/{id}/domain` → aggiunge dominio al carrello
-- `POST /order/cart/{id}/checkout` → compra
-- `GET /domain/{domain}` → stato del dominio
-- `POST /domain/zone/{zone}/record` → DNS record (ma noi usiamo CF nameservers)
+**Base URL API:** `https://eu.api.ovh.com/1.0`
 
-**Flusso probabile:**
+**Endpoint da implementare in `ovh-domains.ts`:**
+
+| Operazione | Metodo | Endpoint | Note |
+|---|---|---|---|
+| Crea carrello | `POST` | `/order/cart` | Nessuna auth richiesta |
+| Verifica disponibilità dominio | `GET` | `/order/cart/{cartId}/domain?domain=xxx` | Ritorna prezzi e disponibilità |
+| Aggiungi dominio al carrello | `POST` | `/order/cart/{cartId}/domain` | Body: `GenericDomainCreation` |
+| Checkout (compra) | `POST` | `/order/cart/{cartId}/checkout` | Crea l'ordine e addebita |
+| Stato dominio | `GET` | `/domain/{serviceName}` | Verifica che sia attivo |
+| Lista nameserver attuali | `GET` | `/domain/{serviceName}/nameServer` | Per sapere cosa c'è |
+| Aggiorna nameserver | `POST` | `/domain/{serviceName}/nameServers/update` | Punta a Cloudflare NS |
+
+**Flusso completo nel servizio:**
 ```
-OVHcloud registra il dominio → cambia nameservers a Cloudflare →
-  factory-core crea Pages project + CNAME via CF API (già implementato)
+1. POST /order/cart                          → ottieni cartId
+2. GET  /order/cart/{id}/domain?domain=xxx   → verifica disponibilità
+3. POST /order/cart/{id}/domain              → aggiungi al carrello
+4. POST /order/cart/{id}/checkout            → compra
+5. (polling) GET /domain/{domain}            → attendi che sia attivo
+6. POST /domain/{domain}/nameServers/update  → punta a Cloudflare NS
+   → poi passa il controllo a CloudflareDNSService (già implementato)
 ```
 
-### C3. Climbo (consegna lead + reputazione)
+**Nota DNS:** non serve creare record nella zona OVH (`/domain/zone/*/record`)
+perché i nameserver punteranno a Cloudflare, dove i DNS sono già gestiti.
+
+### C3. Climbo (consegna lead + reputazione — Fase B)
 
 **Cosa fa:** crea location per sito, inietta lead verificati, consegna al tenant.
 NON implementato — va scritto `src/services/climbo.ts` (vedi CLIMBO-INTEGRATION.md §6).
+
+**Regola ferma:** Climbo NON raccoglie lead. Riceve il lead **già registrato su D1**,
+con leadId D1 salvato nel campo `note` del contatto. La raccolta resta solo su D1.
+Ogni chiamata Climbo è in try/catch separato: se Climbo è giù, il lead resta su D1
+e la notifica Telegram parte lo stesso.
+
+**Dove si innesta:** in `src/api/leads.ts`, endpoint `/verify` (~riga 155).
+Quando `doiStatus → verified`, accanto alla notifica Telegram esistente:
+
+```
+lead verified
+  ├── (già presente) TelegramService.notifyLeadVerified()
+  └── (nuovo, try/catch separato) ClimboService:
+        1. upsertContact(locationId, lead)  → crea/trova il contatto
+        2. se il progetto ha un renter → sendDeliveryCampaign()
+```
+
+E alla creazione progetto (`src/api/projects.ts`):
+```
+POST /api/projects
+  └── (nuovo) ClimboService.createLocation(project) → salva climboLocationId su D1
+```
 
 **Variabili necessarie:**
 
@@ -129,11 +191,37 @@ NON implementato — va scritto `src/services/climbo.ts` (vedi CLIMBO-INTEGRATIO
 1. Dashboard Climbo → Settings → API → genera token
 2. `wrangler secret put CLIMBO_API_KEY --name factory-core`
 
-**Endpoint principali (da doc.climbo.com/llms.txt):**
-- `POST /locations` → crea location (= un sito RR)
-- `POST /locations/{id}/contacts` → crea contatto (= lead verificato)
-- `PUT /locations/{id}/contacts/{cid}` → aggiorna con leadId D1
-- `POST /locations/{id}/campaigns` → campagna consegna al tenant
+**Base URL API:** `https://api.climbo.com`
+**Autenticazione:** header `x-api-key: <CLIMBO_API_KEY>`
+**Modello dati:** business → location → contact. Un sito RR = una location.
+
+**Endpoint da implementare in `climbo.ts`:**
+
+| Operazione | Metodo | Endpoint | Note |
+|---|---|---|---|
+| Crea location | `POST` | `/business/{businessId}/location?location_name=xxx` | Parametro `location_name` in query (1-128 char). Nessun body. Risposta: `LocationDTO` con l'ID |
+| Crea contatto/i | `POST` | `/business/{businessId}/location/{locationId}/contacts` | Body: `{ contacts: [{ first_name, last_name?, phone?, email?, service_date? }] }`. **Almeno phone O email obbligatorio.** Max 100 per batch. Risposta 201 |
+| Aggiorna contatto | `PATCH` | `/business/{businessId}/location/{locationId}/contacts/{contactId}` | Per salvare il leadId D1 nel campo note |
+| Crea campagna | `POST` | `/business/{businessId}/location/{locationId}/campaigns` | Body: `{ name, template_id, list, channel, scheduled_at? }`. Canali: `sms`, `email`, `whatsapp`. `list`: `"All contacts"` o `"Not contacted"`. Risposta 202 |
+| Crea template | `POST` | `/business/{businessId}/location/{locationId}/templates` | Template messaggio per le campagne |
+| Invia inviti recensione | `POST` | `/business/{businessId}/location/{locationId}/invites` | Per la fase tenant (reputazione GBP) |
+
+**Mapping dati lead D1 → contatto Climbo:**
+
+| Campo D1 (leads) | Campo Climbo (contact) |
+|---|---|
+| `name` | `first_name` |
+| `email` | `email` |
+| `phone` | `phone` |
+| `id` (leadId D1) | salvato via PATCH nel campo note/custom |
+| `createdAt` | `service_date` |
+
+**Schema D1 da aggiungere** (campi additivi, non breaking):
+- `projects.climboLocationId` (text, nullable)
+- `leads.climboContactId` (text, nullable)
+
+**Fasatura:** la creazione location (al progetto) ha senso anticipare in Fase A,
+così i contatti si accumulano. Campagne e inviti recensione sono Fase B (quando c'è il tenant).
 
 ---
 
