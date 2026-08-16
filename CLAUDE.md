@@ -30,7 +30,7 @@ Il collo di bottiglia non è mai stato tecnico. Le fasi che mancano sono di mone
 | `ristrutturazioniformia.it` | Dominio **già indicizzato** (335 impression, pos. media 6,9). Guscio: contenuti falsi da rimuovere |
 | `agenziaimmobiliareformia.it` | Sito nuovo pronto (Astro + D1 lead). Cliente ★ fondatore: Vittorio Piscitelli |
 | `rr-autospurghi-formia` | 52 pagine buone ma **archiviato**: 1 solo autospurghista su 8 comuni = nessun compratore |
-| `cercasa-db` | 751 immobili geolocalizzati. Time-series = moat. Cron **fermo dal 2 luglio** |
+| `cercasa-db` | 799 annunci storici osservati; backfill micro-zone verificato. Ultima evidenza D1: 22 luglio. Recovery runtime preservata; ingest corrente **non provato operativo** |
 
 ## Le regole (non negoziabili)
 
