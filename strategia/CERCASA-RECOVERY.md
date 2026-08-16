@@ -17,8 +17,9 @@ CercaCasa è tooling RankEmpire per acquisizione e persistenza di dati immobilia
 
 Il portale AIF è un consumatore downstream separato: non possiede lo scraper, non è stato
 modificato durante questa recovery e non deve leggere gli annunci grezzi come se fossero
-inventario corrente. TROVATEMI OS resta l'autorità di business e governance. D1 resta il
-system of record dei dati acquisiti; Telegram è solo un canale di notifica.
+inventario corrente. TROVATEMI OS resta l'autorità di business e governance. Il D1 legacy
+`cercasa-db` resta lo store operativo delle osservazioni CercaCasa; non è il system of
+record dei lead TROVATEMI. Telegram è solo un canale di notifica.
 
 Questa specifica canonizza le evidenze disponibili. Non canonizza la trascrizione
 dell'operatore né promuove automaticamente il bundle distribuito a sorgente manutenibile.
@@ -202,7 +203,8 @@ Il task deve iniziare **offline, senza deploy**:
 1. ricostruire tipi, scraper Idealista, handler scheduled e persistenza D1;
 2. preservare il contratto quattro comuni / cron giornaliero / semantica `city` e `zone`;
 3. decidere e testare la propagazione di 403, 429, risultati parziali e zero risultati;
-4. mantenere D1 come system of record e Telegram come notifica downstream;
+4. mantenere `cercasa-db` come store delle osservazioni CercaCasa e Telegram come notifica
+   downstream, senza confonderlo con il SoR canonico dei lead TROVATEMI;
 5. rimuovere dal sorgente manutenibile la cache `.wrangler` e aggiungere la regola di ignore,
    dopo aver conservato la sola evidenza forense necessaria senza aprirne o copiarne i valori;
 6. non recuperare credenziali storiche e non introdurre migration live;
