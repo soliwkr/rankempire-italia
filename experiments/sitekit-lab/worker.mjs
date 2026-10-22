@@ -1,4 +1,4 @@
-const html = \`<!doctype html>
+const html = `<!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>SOLIWKR SiteKit · Lab</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e8eefb;background:#080d19;font-synthesis:none}
@@ -52,5 +52,5 @@ function render(){if(!form.reportValidity())return;const v=Object.fromEntries(ne
 form.addEventListener('submit',e=>{e.preventDefault();render()});
 function mode(m){frame.classList.toggle('mobile',m==='mobile');document.getElementById('mobile').classList.toggle('active',m==='mobile');document.getElementById('desktop').classList.toggle('active',m!=='mobile')}
 document.getElementById('mobile').onclick=()=>mode('mobile');document.getElementById('desktop').onclick=()=>mode('desktop');render();
-</script></body></html>\`;
+</script></body></html>`;
 export default {async fetch(req){ const url=new URL(req.url);if(req.method!=='GET')return new Response('Method Not Allowed',{status:405,headers:{Allow:'GET'}});if(url.pathname==='/health')return new Response('OK',{headers:{'Content-Type':'text/plain','Cache-Control':'no-store'}});if(url.pathname!=='/')return new Response('Not Found',{status:404});return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self' about:; base-uri 'none'; form-action 'self'; img-src data:;",'Cache-Control':'no-store'}})}};
