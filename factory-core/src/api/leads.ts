@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { bearerAuth } from 'hono/bearer-auth';
 import { drizzle } from 'drizzle-orm/d1';
 import { leads, projects } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -25,11 +26,12 @@ type Bindings = {
   VERIFICATION_BASE_URL: string;
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
+  API_SECRET: string;
 };
 
 const api = new Hono<{ Bindings: Bindings }>();
 
-api.get('/', async (c) => {
+api.get('/', async (c, next) => bearerAuth({ token: c.env.API_SECRET })(c, next), async (c) => {
   const db = drizzle(c.env.DB);
   const limit = Math.min(Number(c.req.query('limit') ?? 20), 100);
   const projectSlug = c.req.query('project_slug');
@@ -67,7 +69,7 @@ api.get('/', async (c) => {
   return c.json(rows);
 });
 
-api.patch('/:id', async (c) => {
+api.patch('/:id', async (c, next) => bearerAuth({ token: c.env.API_SECRET })(c, next), async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json();
   
