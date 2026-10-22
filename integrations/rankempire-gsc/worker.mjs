@@ -87,7 +87,7 @@ async function analytics(req,env){
 export default {
   async fetch(req,env){
     const url=new URL(req.url);
-    if(url.pathname==='/health'&&req.method==='GET')return reply({ok:true,component:'rankempire-gsc-operator',mode:'read-only',configured:false});
+    if(url.pathname==='/health'&&req.method==='GET')return reply({ok:true,component:'rankempire-gsc-operator',mode:'read-only',googleAuth:'not_tested'});
     // Fail closed. No account access without two separately configured secrets.
     if(typeof env.SEO_OPERATOR_API_SECRET!=='string'||env.SEO_OPERATOR_API_SECRET.length<32||!env.GSC_SERVICE_ACCOUNT)return reply({error:'operator_not_configured'},503);
     const header=req.headers.get('Authorization')||'';
