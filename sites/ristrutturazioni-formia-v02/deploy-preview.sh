@@ -5,4 +5,4 @@ cd "$(dirname "$0")"
 # Richiede Wrangler autenticato al corretto account Cloudflare.
 npx wrangler pages deploy site \
   --project-name=ristrutturazioni-formia \
-  --branch=rf-editorial-v02
+  --branch=rf-editorial-v03
