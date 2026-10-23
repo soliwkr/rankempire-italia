@@ -11,7 +11,7 @@ with sync_playwright() as pw:
   page.route('**/*',lambda route:route.abort())
   errors=[]
   page.on('pageerror',lambda e:errors.append(str(e)))
-  for url in ['','ristrutturare-casa','ristrutturazione-bagno','vasca-in-doccia','costi-ristrutturazione','preventivi','metodo','privacy']:
+  for url in ['','ristrutturare-casa','ristrutturazione-bagno','vasca-in-doccia','costi-ristrutturazione','preventivi','metodo','privacy','cookie','trasparenza']:
    html=(site/url/'index.html').read_text()
    html=html.replace('<link rel="stylesheet" href="/assets/site.css">','<style>'+css+'</style>').replace('<script src="/assets/site.js" defer></script>','<script>'+js+'</script>')
    page.set_content(html,wait_until='domcontentloaded',timeout=15000)

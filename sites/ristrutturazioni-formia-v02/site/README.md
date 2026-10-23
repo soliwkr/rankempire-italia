@@ -38,3 +38,9 @@ Apri `http://localhost:8000`.
 - La configurazione Google Cloud/Cloudflare è completamente separata dal sito.
 - Impossibile ricevere lead finché il pulsante partner non è attivo.
 - Nessun deployment live è autorizzato implicitamente da questo pacchetto.
+
+## v0.3 note
+- `/cookie/` and `/trasparenza/` added, operator Internet Marketing Secrets identified.
+- eSIM pattern preserved: consent-gated GTM/GA4, no analytics in preview.
+- To build for production, set RF_MODE=production, RF_CMP_EMBED_ID, RF_GTM_ID, RF_GA4_MEASUREMENT_ID, RF_PRODUCTION_CONTENT_APPROVED=yes **only after external verification**.
+- Do not reuse Senza Roaming GTM-W3LSK9RZ / G-GWJ9YPPVJW.
