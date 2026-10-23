@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /
+# PREVIEW ONLY. Remove Disallow after final launch QA.
