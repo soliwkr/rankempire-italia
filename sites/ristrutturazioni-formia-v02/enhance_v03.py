@@ -50,7 +50,7 @@ def tracking_snippet(path):
  if(w.__RF_MEASUREMENT_V1__)return;
  w.__RF_MEASUREMENT_V1__=true;
  w.dataLayer=w.dataLayer||[];
- w.dataLayer.push({event:'rf_consent_defaults',analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+ // Consent state is initialized and updated by the verified site-specific iubenda configuration.
  w.dataLayer.push({rf_ga4_measurement_id:c.measurement_id,route_class:c.route_class,content_slug:c.content_slug,site_language:'it',page_location:c.page_location});
  w.dataLayer.push({'gtm.start':Date.now(),event:'gtm.js'});
  var s=d.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(c.gtm_id);d.head.appendChild(s);
