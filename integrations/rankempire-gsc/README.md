@@ -40,3 +40,23 @@ Non si garantisce indicizzazione, ranking o copertura esaustiva di tutte le quer
 
 ## Separazione
 Non modificare `factory-core` o la sua D1 per integrare questo operatore. L'implementazione è separata e può essere collegata ad AIOS quando autenticazione e proprietà saranno state verificate.
+
+## Estensione Serper — SERP Italia (draft, non distribuita)
+
+Questa estensione resta **nello stesso Worker** `rankempire-gsc-operator`. Non crea un'altra infrastruttura. La chiave `SERPER_API_KEY` deve stare in Cloudflare **Secret** e non compare mai in sorgenti, log o issue. La sua presenza è stata verificata come binding il 24/10/2026; questo non equivale a una chiamata Serper riuscita. La configurazione corrente del Worker non espone il subdomain pubblico; mantenerla privata. In caso di futura esposizione usare Cloudflare Access o rete privata e l'attuale autorizzazione Bearer (non ridurre i controlli).
+
+### Contratto unico e limitato
+
+`POST /v1/serp`, con **lo stesso** `Authorization: Bearer <SEO_OPERATOR_API_SECRET>` delle API GSC e `Content-Type: application/json`. JSON ammesso: `{"q":"costo rifacimento bagno piccolo"}`. Query manuale, una sola richiesta Serper /search, `gl=it`, `hl=it`, `num=10`. Nessuna batch, crawler, cron, query parametrizzata da URL, tracking utenze o ricerca in automatico. Il limite locale è 512 caratteri JSON; la query max 140 caratteri. Errore generico senza corpo upstream o key leak; 429 upstream diventa 429. Nessun accesso diretto del browser all'API Serper.
+
+**Output:** `query`, `source=serper`, `organic[]` con position/title/url/snippet limitati, indicazione che si tratta di **SERP snapshot e NON dati di volume di ricerca**. Non inferire punteggi SEO o ranking sicuri. Confrontare intent, autorevolezza, copertura e originalità manualmente. I volumi provengono da Keyword Planner e devono riportare data/fonte; GSC mostra dati di proprietà accessibili e non misura tutto il mercato.
+
+### Test e gate di attivazione
+
+Test deterministici senza credenziali e senza API calls:
+
+```bash
+node --test integrations/rankempire-gsc/tests/serper.test.mjs
+```
+
+**Prima di qualsiasi deploy**: review CTO e QA, verificare che gli endpoint GSC precedenti restino protetti, permessi e route, credits quota Serper, conteggio invocazioni e rollback, autorizzazione esplicita all'aggiornamento Worker condiviso. Non lanciare automaticamente query: anche una prova Serper può consumare credito. Nessuna modifica è stata applicata al Worker live con questo commit. Il blocco Cloudflare Pages 403 della preview Formia è **indipendente** da Serper.
