@@ -2,6 +2,7 @@
 **Data:** 2026-10-24  
 **Owner del prodotto:** Chris / Internet Marketing Secrets (identità fiscale da riconfermare prima della pubblicazione)  
 **Direzione operativa:** SOLIWKR Operator & Portfolio AIOS (CEO PaperClip); **repo proprietario:** `soliwkr/rankempire-italia`  
+**Issue unica di delivery:** [SOL-43 — RF-DELIVERY](https://hq.soliwkr.pro/SOL/issues/SOL-43), assegnata al CEO SOLIWKR. Stato operativo e aggiornamenti vivono solo in questa issue.
 **Coda canonica di lavoro:** PaperClipHQ / SOLIWKR Pro, progetti già esistenti «SOLIWKR — Operazioni di portafoglio» e «RankEmpire Italia». **Questa pagina è la specifica di delivery, NON una seconda coda di task**. Ogni attività viva ha un solo task PaperClip; il task punta alla sezione/ID RF qui sotto. Evitare issue duplicate e copie dello stato.  
 **WIP:** 1 workstream di prodotto alla volta; niente nuovi siti, domini o verticale aggiuntivi.
 
