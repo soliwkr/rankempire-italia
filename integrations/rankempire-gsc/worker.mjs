@@ -93,7 +93,7 @@ async function serperSearch(req,env){
   const raw=await req.text();if(raw.length>512)return reply({error:'payload_too_large'},413);
   let body;try{body=JSON.parse(raw)}catch{return reply({error:'invalid_json'},400)}
   if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['q'].includes(k)))return reply({error:'invalid_request'},400);
-  if(typeof body.q!=='string'||body.q.length<3||body.q.length>140||body.q.trim()!==body.q||/[\\r\\n<>]/.test(body.q)||/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/i.test(body.q))return reply({error:'invalid_keyword'},400);
+  if(typeof body.q!=='string'||body.q.length<3||body.q.length>140||body.q.trim()!==body.q||Array.from(body.q).some(c=>c.charCodeAt(0)<32||'<>@'.includes(c)))return reply({error:'invalid_keyword'},400);
   // Fixed locale and one page/10 results, so a caller cannot request large batches or other regions.
   let upstream;
   try{
@@ -107,7 +107,7 @@ async function serperSearch(req,env){
   if(!upstream.ok)return reply({error:'serper_unavailable',upstreamStatus:upstream.status},upstream.status===429?429:502);
   let data;try{data=await upstream.json()}catch{return reply({error:'serper_response_invalid'},502)}
   if(!data||!Array.isArray(data.organic))return reply({error:'serper_response_invalid'},502);
-  const organic=data.organic.slice(0,10).filter(r=>r&&typeof r.link==='string'&&/^https?:\\/\\//i.test(r.link)).map(r=>({
+  const organic=data.organic.slice(0,10).filter(r=>r&&typeof r.link==='string'&&(r.link.startsWith('https://')||r.link.startsWith('http://'))).map(r=>({
     position:Number.isSafeInteger(r.position)?r.position:null,
     title:typeof r.title==='string'?r.title.slice(0,220):'',
     url:r.link.slice(0,1600),
