@@ -26,6 +26,13 @@ La prima migrazione tecnica si trova nella [PR #6 — Workers Static Assets](htt
 
 **Solo dopo QA** preparare release indicizzabile, mappa redirect URL e passaggio dominio autorizzato; nessun cambio al vecchio Pages di produzione senza gate e rollback documentato. I vecchi riferimenti a RF-02 Pages 403 sono storici e **superati da questa decisione**.
 
+## CORREZIONE owner — 25/10/2026: **un repository Astro indipendente PER sito**
+Prevale su qualsiasi istruzione precedente di usare `soliwkr/rankempire-italia` come repository del Worker. **RankEmpire = factory di ricerca/scoring/template/provisioning; non host dei siti.** Ogni nuovo sito CPL ha repository GitHub Astro dedicato, Worker dedicato, dominio e analytics dedicati. Per Formia: nome proposto `soliwkr/ristrutturazioniformia`, ancora **NON CREATO**; Worker `ristrutturazioni-formia-web` già creato e **NON DEPLOYATO**. Non collegarlo a branch della factory, neanche come workaround.
+
+Evidenze: `CLAUDE.md` originale definisce «I siti restano repo separati» e `astro-rank-rent` come template; `.planning/phases/02-astro-template-completion/02-VERIFICATION.md` attesta il precedente `rankame/templates/astro-base`. **Il template sorgente live non è attualmente verificato**: il repo `soliwkr/astro-rank-rent` non è accessibile via GitHub e `rankame` è un gitlink senza `.gitmodules` completa. Serve recuperarlo/ripristinarlo prima di rivendicare «template Astro pronto». Il template storico rank-and-rent va adattato al publisher CPL (no form proprio/PII, no LocalBusiness fittizio, no service×zone doorway).
+
+**RF-02 corretto:** individuare template Astro verificabile, creare la repo singola del sito, trasferirvi v0.3 e le 10 pagine senza perdere contenuti, impostare build Astro→Static Assets `dist/` e collegare **solo questa repo** via Workers Builds al Worker Formia già creato. Poi build, workers.dev, 10 pagine, QA, noindex. La PR [#6](https://github.com/soliwkr/rankempire-italia/pull/6) è **snapshot di migrazione da esportare**, NON base per la connessione Git definitiva. Riparare Pages 403 resta fuori scope. Il gate produzione/DNS rimane fermo.
+
 ## Stato e evidenze da cui ripartire (verifiche puntuali)
 - Repo `soliwkr/rankempire-italia` branch `preview/ristrutturazioni-formia-v03` con package sito in `sites/ristrutturazioni-formia-v02/`: 10 pagine, sorgenti, test, proposte consent/GTM/GA4. La v0.3 **non risulta pubblicata**; 403 upload asset riportato al 23/10. Nessun assunto di successo live.
 - Preview **v0.2** storica: `https://rf-editorial-v02.ristrutturazioni-formia.pages.dev/`, da ricontrollare HTTP/robots prima di citarla come live. Dominio produzione `https://ristrutturazioniformia.it/`: NON toccare fino a gate RF-09.
@@ -41,7 +48,7 @@ La prima migrazione tecnica si trova nella [PR #6 — Workers Static Assets](htt
 | ID | Lavoro verificabile | Gate / prova di uscita | Responsabile |
 |---|---|---|---|
 | RF-01 | Ricostruire AS-IS: branch/commit, Pages, URL pubblico, robots/noindex, permessi deploy, documentazione e rollback | Matrice con prove e SHA; distinguere preview da produzione | CTO |
-| RF-02 | **Migrare v0.3 a GitHub → Worker Static Assets**, collegare Workers Builds a branch dedicato e deploy su workers.dev, senza Pages | Build Git verificata, URL Worker + deployment ID, 10 pagine e 404, noindex e UI QA, dominio produzione immutato | CTO → QA |
+| RF-02 | **Repo Astro dedicata a Formia** dal template verificato/adattato al CPL, migrare v0.3, poi Worker Static Assets via GitHub Builds della repo **di sito** | Repo dedicata + commit, build Astro in dist, URL Worker + deployment ID, 10 pagine e 404, noindex e QA; produzione invariata | CTO → QA |
 | RF-03 | Mappare URL già indicizzati, query GSC e redirect; testare API Search Console senza esporre operator o secret | Inventario URL attuali/nuovi, piano 301 e report API PASS/FAIL/UNKNOWN | CTO |
 | RF-04 | Riscrivere copy editoriale e commerciale di home, casa, bagno, vasca-doccia, costi, preventivi, metodo, trasparenza | Ogni claim con fonte/data/qualifica; guide realmente utili; prezzi solo come stime motivate; NO testi falsi, NO doorway | Editor / CEO |
 | RF-05 | Rifinire design e QA mobile/accessibilità/performance, fotografie lecite e verificabili | Verifica screenshot desktop+mobile, tastiera, navigazione, Core Web Vitals/lighthouse con valori misurati | CTO → QA |
