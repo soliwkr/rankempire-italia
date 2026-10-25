@@ -9,18 +9,25 @@
 
 **Questa è una migrazione della superficie web; non riattivare la factory legacy, D1 lead o DOI.** La CTA affiliata e i consensi del dominio non sono ancora abilitati; lo stato resta PREVIEW. La cartella si chiama storicamente `ristrutturazioni-formia-v02`, ma contiene i file v0.3 verificati.
 
-## GitHub → Worker, SENZA Pages
-Cloudflare supporta [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) da GitHub e [Static Assets](https://developers.cloudflare.com/workers/static-assets/). La connessione Git/Worker deve essere autenticata e approvata: **non viene creata automaticamente da questo commit**.
+## CORREZIONE ARCHITETTURALE — 25/10/2026 (owner)
+**NON collegare Workers Builds al repository `soliwkr/rankempire-italia` come soluzione definitiva o provvisoria di runtime.** Lo staging in questa cartella era un errore di instradamento: RankEmpire è la factory di ricerca/scoring/produzione; ogni sito pubblicato deve avere **un repository indipendente Astro + un Worker indipendente + un dominio indipendente**. Questa PR è un **pacchetto sorgente di transizione da esportare**, NON la sorgente definitiva da collegare alla build del Worker.
 
-Configurare in Cloudflare **Workers & Pages → Create Worker → Connect to Git** (o collegare il Worker esistente) con:
-- **Repository:** `soliwkr/rankempire-italia` (staging nel repository esistente; repository dedicato per ogni asset quando sarà possibile crearlo senza duplicati).
-- **Production branch del solo Worker:** `migration/rf-worker-20261025` — *non* `main` di RankEmpire; non collegare ancora il dominio.
-- **Root directory:** `sites/ristrutturazioni-formia-v02`.
-- **Build command:** `npm test` (fallisce prima del deploy se i controlli non passano).
-- **Deploy command:** `npx wrangler deploy` (richiede permessi **Workers Scripts Edit**, non Pages Write).
-- **Name must match** `ristrutturazioni-formia-web` in Wrangler. Se è necessario scegliere un altro nome, allineare entrambi PRIMA della connessione.
+### Fatti verificati
+- La documentazione storica in `.planning/phases/02-astro-template-completion/` e `CLAUDE.md` identifica il template ufficiale come `astro-rank-rent` / `rankame/templates/astro-base` e afferma che **i siti rimangono in repo separati**.
+- Nel GitHub attualmente accessibile il repository `soliwkr/astro-rank-rent` restituisce 404; il commit `rankame` compare come gitlink nel tree ma il repo factory non ha una `.gitmodules` funzionante. **Non dichiarare il template sorgente corrente verificato**, non usare una directory Astro di un altro progetto come surrogato.
+- Il vecchio Astro è orientato al **rank-and-rent** (schema LocalBusiness/Service, lead proprietari D1, service×zone massivo). Il modello attuale CPL editoriale richiede **adattamento esplicito**: Organization/Article/Breadcrumb appropriati, no provider di servizi fittizio, nessun form lead first-party/DOI/renter, nessuna doorway page.
+- Il Worker isolato `ristrutturazioni-formia-web` esiste nell'account Cloudflare, ma **non è deployato**; una repo connection GitHub per RankEmpire è stata registrata, **senza trigger Build**. Non proseguire con la selezione token/branch RankEmpire per questo Worker.
 
-È possibile eseguire `npm test` localmente senza nessuna API key. Per il primo deploy da Cloudflare Builds servono la connessione GitHub all'account e le autorizzazioni Workers pertinenti. Non copiare token/API keys in GitHub, issue o chat. L'URL workers.dev risultante sarà una **preview pubblicamente accessibile ma esclusa dall'indicizzazione** (noindex + robots disallow). La preview non equivale a GO produzione.
+### Sequenza corretta — sito 1
+1. Recuperare il template Astro ufficiale verificabile da una fonte esistente, oppure ripristinarne una versione di riferimento con provenienza/commit attestati. Valutare i componenti riusabili e le modifiche necessarie al modello CPL; non inventare un nuovo framework.
+2. Creare un repository dedicato al sito, proposto `soliwkr/ristrutturazioniformia`, dopo aver verificato unicità del nome. Il connettore GitHub attualmente disponibile **non espone `create_repository`**: creare la repo nel GitHub autorizzato o mediante un canale di provisioning che supporti realmente l'azione, non dichiararla creata in anticipo.
+3. Spostare nello **stesso repository del sito** la v0.3 editoriale, i 10 URL preservati, le risorse/test e il Worker, convertendo gli asset in pagine/layout Astro solo dove offre vantaggio e preservando SEO/link. Non perdere screenshot/evidenze; evitare bootstrap vuoto che cancella pagine già pronte.
+4. Il repository del sito contiene `astro.config.mjs`, `package.json`, `src/pages/`, `src/layouts/`, `src/components/`, `wrangler.jsonc`, `tests/`. Build `npm run build && npm test`; Worker `ristrutturazioni-formia-web` pubblica **solo gli asset generati in `dist/`**, non l'output legacy `site/`.
+5. Collegare **la repo dedicata** a Cloudflare Workers Builds per il Worker già creato, preferendo connessione esistente per l'account ma con trigger specifico **su repo del sito** e token dedicato. **Nessun trigger per repo factory.** Verificare ID commit/build, Worker URL, noindex, 10 pagine, 404, cookie e click outbound.
+6. Solo con QA e gate owner, predisporre il rilascio indicizzabile e l'eventuale trasferimento di `ristrutturazioniformia.it` da Pages a Worker. Preservare Pages come rollback finché la migrazione non è verificata.
+
+### Cosa resta utile di questa PR
+`site/`, `src/index.mjs` e i test sono uno snapshot tecnico funzionante in preview, **non la struttura canonica Astro**. Non cancellare lo snapshot né mergiarlo nel `main` della factory. Non collegare dominio, DNS, token o deploy. La nuova PR nel repository dedicato dovrà diventare la fonte vera della produzione.
 
 ## Gate prima del dominio
 1. Verificare il primo build ID e URL Worker: `/_health` OK, 10 pagine, 404 reali, risposte `X-Robots-Tag: noindex`, menu mobile, simulatore, accessibilità, performance. Validare che preview riceva asset esistenti.
@@ -31,6 +38,6 @@ Configurare in Cloudflare **Workers & Pages → Create Worker → Connect to Git
 6. Verificare con richieste HTTP pubbliche dominio, redirects, SSL, canonical, analytics post-consenso, outbound referral. Misurare lead **approvati** dal partner, non solo clic.
 
 ## Separazione da SOLIWKR
-- **Fonte tecnica:** questa cartella nel repository RankEmpire (eventuale estrazione futura in repository dedicato).
+- **Fonte tecnica transitoria:** questa cartella nel repository RankEmpire. **Fonte definitiva obbligatoria:** nuovo repository del sito, non questa factory.
 - **Coda unica e gate:** [SOL-43](https://hq.soliwkr.pro/SOL/issues/SOL-43).
 - **Migrazione proposta:** questo ramo/PR; nessun merge su main della factory, nessun deploy, costo o cambiamento al dominio implicitamente autorizzato.
