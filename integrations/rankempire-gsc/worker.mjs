@@ -84,6 +84,40 @@ async function analytics(req,env){
   const x=await googleFetch(env,'sites/'+encodeURIComponent(b.siteUrl)+'/searchAnalytics/query','POST',payload);
   return reply({property:b.siteUrl,dimensions:dims,startDate:b.startDate,endDate:b.endDate,rows:x.rows||[],aggregationType:x.responseAggregationType||null});
 }
+
+// Serper: strictly bounded, manually triggered SERP read. Never search without an operator request.
+async function serperSearch(req,env){
+  // Explicit, opt-in activation guard: secret presence alone must never incur Serper credits.
+  if(env.SERPER_ENABLED!=='true')return reply({error:'serper_disabled'},503);
+  if(typeof env.SERPER_API_KEY!=='string'||!env.SERPER_API_KEY.trim())return reply({error:'serper_not_configured'},503);
+  if(!(req.headers.get('Content-Type')||'').toLowerCase().startsWith('application/json'))return reply({error:'expected_json'},415);
+  if(Number(req.headers.get('Content-Length')||0)>512)return reply({error:'payload_too_large'},413);
+  const raw=await req.text();if(raw.length>512)return reply({error:'payload_too_large'},413);
+  let body;try{body=JSON.parse(raw)}catch{return reply({error:'invalid_json'},400)}
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!['q'].includes(k)))return reply({error:'invalid_request'},400);
+  if(typeof body.q!=='string'||body.q.length<3||body.q.length>140||body.q.trim()!==body.q||Array.from(body.q).some(c=>c.charCodeAt(0)<32||'<>@'.includes(c)))return reply({error:'invalid_keyword'},400);
+  // Fixed locale and one page/10 results, so a caller cannot request large batches or other regions.
+  let upstream;
+  try{
+    upstream=await fetch('https://google.serper.dev/search',{
+      method:'POST',
+      headers:{'X-API-KEY':env.SERPER_API_KEY,'Content-Type':'application/json','Accept':'application/json'},
+      body:JSON.stringify({q:body.q,gl:'it',hl:'it',num:10}),
+      signal:AbortSignal.timeout(10000)
+    });
+  }catch{return reply({error:'serper_unavailable'},502)}
+  if(!upstream.ok)return reply({error:'serper_unavailable',upstreamStatus:upstream.status},upstream.status===429?429:502);
+  let data;try{data=await upstream.json()}catch{return reply({error:'serper_response_invalid'},502)}
+  if(!data||!Array.isArray(data.organic))return reply({error:'serper_response_invalid'},502);
+  const organic=data.organic.slice(0,10).filter(r=>r&&typeof r.link==='string'&&(r.link.startsWith('https://')||r.link.startsWith('http://'))).map(r=>({
+    position:Number.isSafeInteger(r.position)?r.position:null,
+    title:typeof r.title==='string'?r.title.slice(0,220):'',
+    url:r.link.slice(0,1600),
+    snippet:typeof r.snippet==='string'?r.snippet.slice(0,350):''
+  }));
+  return reply({query:body.q,gl:'it',hl:'it',source:'serper',metric:'SERP snapshot, NOT search volume',organic});
+}
+
 export default {
   async fetch(req,env){
     const url=new URL(req.url);
@@ -93,6 +127,7 @@ export default {
     const header=req.headers.get('Authorization')||'';
     if(!header.startsWith('Bearer ')||!same(header.slice(7),env.SEO_OPERATOR_API_SECRET))return reply({error:'unauthorized'},401);
     try{
+      if(url.pathname==='/v1/serp'&&req.method==='POST')return serperSearch(req,env);
       if(url.pathname==='/v1/properties'&&req.method==='GET'){
         const x=await googleFetch(env,'sites');
         return reply({properties:(x.siteEntry||[]).map(p=>({siteUrl:p.siteUrl,permissionLevel:p.permissionLevel}))});
