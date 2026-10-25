@@ -3,6 +3,9 @@
 **Coordinamento operativo:** SOLIWKR / PaperClip [SOL-43](https://hq.soliwkr.pro/SOL/issues/SOL-43). **Fonte proprietaria:** questo repository.  
 **Prevale per il modello CPL nazionale** sui documenti storici della factory rank-and-rent/renter. Non cancella quei prodotti o contratti: li distingue dal nuovo binario CPL.
 
+## Invariante tecnico — repo singola Astro per ogni sito (decisione owner 25/10)
+`soliwkr/rankempire-italia` è **factory/scouting/control-plane**, NON repository di deploy dei singoli siti. **Ogni sito CPL** ha `soliwkr/<slug-sito>` come repo Astro propria, build `dist/`, Worker Static Assets proprio e dominio/analytics propri. Tutto sotto la **stessa coda SOLIWKR**, senza moltiplicare task. Il template Astro storico `astro-rank-rent` / `rankame/templates/astro-base` va prima recuperato e verificato; non è attualmente disponibile nei repository GitHub connessi. Prima di replicarlo nel CPL rimuovere funzioni renter, raccolta lead D1, LocalBusiness inventati e doorway service×zone. Il sito v0.3 statico in RankEmpire è soltanto uno **snapshot di trasferimento**, non un precedente architetturale. Non collegare Worker Builds ai branch della factory.
+
 ## Prodotto che vogliamo
 Una **rete nazionale di molti siti editoriali-commerciali, ognuno con un intento preciso**, costruita sulle **long tail italiane con domanda dimostrabile e SERP insufficientemente servite**. Il sito risolve il problema di ricerca con informazioni affidabili e indirizza l'utente, volontariamente, al **modulo ospitato da un partner CPL**. L'editore monetizza solo quando il partner riconosce e valida la richiesta secondo condizioni scritte.
 
