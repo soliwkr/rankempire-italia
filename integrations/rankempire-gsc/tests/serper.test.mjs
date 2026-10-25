@@ -5,7 +5,8 @@ import worker from '../worker.mjs';
 const env={
   GSC_SERVICE_ACCOUNT:'test-placeholder-not-used-on-serper-path',
   SEO_OPERATOR_API_SECRET:'1234567890abcdefghij1234567890AB',
-  SERPER_API_KEY:'unit-test-placeholder'
+  SERPER_API_KEY:'unit-test-placeholder',
+  SERPER_ENABLED:'true'
 };
 const url='https://seo-operator.invalid/v1/serp';
 function request(payload, authorization=true, type='application/json'){
@@ -31,6 +32,11 @@ test('rejects calls without auth or without required existing worker config',asy
   assert.equal(noAuth.status,401);
   const notConfigured=await worker.fetch(request({q:'rifare bagno formia'}),{...env,GSC_SERVICE_ACCOUNT:''});
   assert.equal(notConfigured.status,503);
+});
+
+test('Serper is disabled by default even when secret binding exists',async()=>{
+  const body=await check({q:'rifare bagno formia'},503,{...env,SERPER_ENABLED:undefined});
+  assert.equal(body.error,'serper_disabled');
 });
 
 test('fails closed when Serper key is absent',async()=>{
