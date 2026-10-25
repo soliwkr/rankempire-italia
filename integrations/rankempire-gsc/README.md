@@ -43,6 +43,8 @@ Non modificare `factory-core` o la sua D1 per integrare questo operatore. L'impl
 
 ## Estensione Serper — SERP Italia (draft, non distribuita)
 
+**Fail closed:** anche con `SERPER_API_KEY` già configurata, la rotta risponde `503 serper_disabled` finché la variabile **`SERPER_ENABLED='true'`** non viene impostata *esplicitamente* dopo il gate owner. Nessun credito Serper è consumato dalla sola presenza della key o dal merge del codice. In caso di rollback/pausa impostare `SERPER_ENABLED='false'`.
+
 Questa estensione resta **nello stesso Worker** `rankempire-gsc-operator`. Non crea un'altra infrastruttura. La chiave `SERPER_API_KEY` deve stare in Cloudflare **Secret** e non compare mai in sorgenti, log o issue. La sua presenza è stata verificata come binding il 24/10/2026; questo non equivale a una chiamata Serper riuscita. La configurazione corrente del Worker non espone il subdomain pubblico; mantenerla privata. In caso di futura esposizione usare Cloudflare Access o rete privata e l'attuale autorizzazione Bearer (non ridurre i controlli).
 
 ### Contratto unico e limitato
