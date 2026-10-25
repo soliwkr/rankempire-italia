@@ -33,14 +33,17 @@ Obiettivo: **asset online che producono dati**, non funzionalità nuove.
 ## A1. Time-series cercasa ⏱️ PRIORITÀ ASSOLUTA
 
 **Perché prima di tutto:** è l'unico asset il cui valore dipende dal tempo trascorso e che
-**non è recuperabile a posteriori**. Fermo dal 2 luglio = tre settimane di storia perse per
-sempre. Costa mezz'ora e lavora da solo mentre fai i pacchi.
+**non è recuperabile a posteriori**. La diagnosi storica ha mostrato che il cron girava, ma
+quota RapidAPI ed error handling potevano produrre esecuzioni apparentemente riuscite senza
+nuovo ingest. La recovery giornaliera Idealista-only e la migrazione zone furono eseguite a
+luglio; l'operatività corrente non è provata (ultima evidenza D1: 22 luglio).
 
-- [ ] Diagnosticare perché il cron di `cercasa-scraper` è fermo (scheduled trigger? quota
-      RapidAPI? errore silenzioso?)
-- [ ] Riattivare e verificare che scriva davvero (controllo `last_seen_at` dopo 24h)
-- [ ] **Correggere la normalizzazione città**: oggi tutti gli annunci finiscono `city='Formia'`
-      anche se il worker interroga 16 zone Idealista. Mappare a micro-zona reale
+- [x] Diagnosticare il no-ingest storico: cron attivo, quota RapidAPI esaurita ed errori
+      convertiti in risultati vuoti
+- [ ] Verificare/riparare separatamente l'ingest corrente e osservare nuovi `last_seen_at`
+- [x] **Correggere la semantica geografica storica**: `city='Formia'` è il comune corretto
+      per gli annunci di Formia; la dimensione mancante era `zone`. Backfill D1 verificato;
+      i nuovi record devono usare il distretto provider come zona
 - [ ] Aggiungere alert (Telegram) se il cron non gira per >48h — un asset silenziosamente
       fermo è peggio di uno assente
 - [ ] Tabella `market_stats` aggregata separata da `listings` grezzi (i siti leggono le
