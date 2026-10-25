@@ -87,6 +87,8 @@ async function analytics(req,env){
 
 // Serper: strictly bounded, manually triggered SERP read. Never search without an operator request.
 async function serperSearch(req,env){
+  // Explicit, opt-in activation guard: secret presence alone must never incur Serper credits.
+  if(env.SERPER_ENABLED!=='true')return reply({error:'serper_disabled'},503);
   if(typeof env.SERPER_API_KEY!=='string'||!env.SERPER_API_KEY.trim())return reply({error:'serper_not_configured'},503);
   if(!(req.headers.get('Content-Type')||'').toLowerCase().startsWith('application/json'))return reply({error:'expected_json'},415);
   if(Number(req.headers.get('Content-Length')||0)>512)return reply({error:'payload_too_large'},413);
