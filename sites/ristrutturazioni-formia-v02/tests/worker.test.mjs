@@ -26,7 +26,7 @@ test('asset cache is retained with security headers',async()=>{
 });
 test('robots explicitly disallows indexing',async()=>{
  const r=await worker.fetch(new Request('https://preview.invalid/robots.txt'),env);
- assert.match(await r.text(),/Disallow: \\/+/);
+ assert.equal((await r.text()).includes('Disallow: /'),true);
  assert.equal(r.headers.get('Cache-Control'),'no-store');
 });
 test('POST is refused and health is public but noindex',async()=>{
