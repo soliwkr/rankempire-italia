@@ -17,6 +17,15 @@ Validare **ristrutturazioniformia.it** come **primo sito-test** di un network na
 - [Direct Upload — Cloudflare](https://developers.cloudflare.com/pages/get-started/direct-upload/) · [Cloudflare Pages API: Create deployment, accepted Pages Write](https://developers.cloudflare.com/api/resources/pages/subresources/projects/subresources/deployments/methods/create/) · [CI/Wrangler: token Pages Edit](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 - Lo scouting **nazionale** di nicchie e affiliate è documentato in [CPL-SCOUTING-001.md](CPL-SCOUTING-001.md). Non dipende dal 403 ma non autorizza un secondo workstream di deploy.
 
+## Decisione architetturale più recente — 25 ottobre 2026: **Repo + Worker, non riparare Pages**
+**Owner ha cambiato il percorso di deployment.** La causa storica del 403 Pages può restare documentata, ma **non è più un gate da risolvere**. Non creare un nuovo progetto Pages né tentare retry del caricamento Pages; tenere la vecchia produzione come rollback, senza eliminarla o spostare domini.
+
+La prima migrazione tecnica si trova nella [PR #6 — Workers Static Assets](https://github.com/soliwkr/rankempire-italia/pull/6) su branch `migration/rf-worker-20261025`, derivata dalla v0.3. Contiene `wrangler.jsonc`, Worker con `ASSETS` e X-Robots-Tag `noindex`, test eseguibili e un contratto di passaggio; **6/6 test del sorgente del branch superati tramite harness**. L'obiettivo è un Worker `ristrutturazioni-formia-web` con [Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) collegato al repo GitHub e root `sites/ristrutturazioni-formia-v02` (cartella storica che contiene v0.3).
+
+**Nuovo RF-02 e next step:** verificare connessione GitHub ↔ Workers Builds esistente, token di build con scope corretto e associare Worker al branch approvato; eseguire build e deploy isolato sul solo `workers.dev`, senza custom domain; verificare `/_health`, 10 pagine, 404, `noindex`, mobile e simulatore. Non dare per completato finché mancano URL Worker e deployment ID. Il connettore GitHub corrente non consente di creare un nuovo repository: staging nel repository RankEmpire, **repo dedicato per ogni sito resta decisione tecnica di scala**, da eseguire senza spezzare la storia o creare duplicazioni.
+
+**Solo dopo QA** preparare release indicizzabile, mappa redirect URL e passaggio dominio autorizzato; nessun cambio al vecchio Pages di produzione senza gate e rollback documentato. I vecchi riferimenti a RF-02 Pages 403 sono storici e **superati da questa decisione**.
+
 ## Stato e evidenze da cui ripartire (verifiche puntuali)
 - Repo `soliwkr/rankempire-italia` branch `preview/ristrutturazioni-formia-v03` con package sito in `sites/ristrutturazioni-formia-v02/`: 10 pagine, sorgenti, test, proposte consent/GTM/GA4. La v0.3 **non risulta pubblicata**; 403 upload asset riportato al 23/10. Nessun assunto di successo live.
 - Preview **v0.2** storica: `https://rf-editorial-v02.ristrutturazioni-formia.pages.dev/`, da ricontrollare HTTP/robots prima di citarla come live. Dominio produzione `https://ristrutturazioniformia.it/`: NON toccare fino a gate RF-09.
@@ -32,7 +41,7 @@ Validare **ristrutturazioniformia.it** come **primo sito-test** di un network na
 | ID | Lavoro verificabile | Gate / prova di uscita | Responsabile |
 |---|---|---|---|
 | RF-01 | Ricostruire AS-IS: branch/commit, Pages, URL pubblico, robots/noindex, permessi deploy, documentazione e rollback | Matrice con prove e SHA; distinguere preview da produzione | CTO |
-| RF-02 | Ripristinare **solo preview** v0.3, diagnosticare 403 e usare percorso GitHub/Wrangler autorizzato | URL preview HTTP 200 navigabile, 10 pagine, noindex header/meta, produzione immutata, deployment ID | CTO → QA |
+| RF-02 | **Migrare v0.3 a GitHub → Worker Static Assets**, collegare Workers Builds a branch dedicato e deploy su workers.dev, senza Pages | Build Git verificata, URL Worker + deployment ID, 10 pagine e 404, noindex e UI QA, dominio produzione immutato | CTO → QA |
 | RF-03 | Mappare URL già indicizzati, query GSC e redirect; testare API Search Console senza esporre operator o secret | Inventario URL attuali/nuovi, piano 301 e report API PASS/FAIL/UNKNOWN | CTO |
 | RF-04 | Riscrivere copy editoriale e commerciale di home, casa, bagno, vasca-doccia, costi, preventivi, metodo, trasparenza | Ogni claim con fonte/data/qualifica; guide realmente utili; prezzi solo come stime motivate; NO testi falsi, NO doorway | Editor / CEO |
 | RF-05 | Rifinire design e QA mobile/accessibilità/performance, fotografie lecite e verificabili | Verifica screenshot desktop+mobile, tastiera, navigazione, Core Web Vitals/lighthouse con valori misurati | CTO → QA |
@@ -45,7 +54,7 @@ Validare **ristrutturazioniformia.it** come **primo sito-test** di un network na
 ## Ordine di esecuzione e criteri
 - **Una sola attività in corso**: prima RF-01, quindi RF-02; RF-03..08 vengono affrontate sequenzialmente o in mini-PR su branch isolati, RF-09 solo dopo approvazione. Non avviare RF-10 prima della produzione.
 - Uno step è `done` solo con **prova primaria** (SHA/PR, Cloudflare deployment ID, HTTP/browser audit, GA4 DebugView, Edilnet report), non per testo dichiarativo o anteprima locale.
-- `blocked` se manca un partner CPL realmente accessibile/attribuibile, consenso, autorizzazione permessi, documentazione legale o reale accesso API. In questi casi confrontare soluzioni affiliate standard; non contattare imprese e non inventare successi.
+- `blocked` se manca l'autorizzazione Workers Builds/GitHub, un partner CPL realmente accessibile/attribuibile, consenso, documentazione legale o reale accesso API. In questi casi confrontare soluzioni affiliate standard; non contattare imprese e non inventare successi.
 - CEO SOLIWKR coordina e mantiene il SOLO task canonico PaperClip; CTO esegue sviluppo autorizzato; Staff/QA verificano indipendentemente; Release interviene soltanto al gate dell'owner. Nessun agente può ampliare il mandato, autoapprovare lanci, creare subtask automatici, negoziare con imprese o gestire i lead.
 - Nessun contenuto copia-incolla da altri domini. `soliwkr/esim` è reference tecnica, non stream di analytics condiviso. `soliwkr/Soliwkr` è portfolio router, non copia questo piano.
 - Rispettare `AGENTS.md` di SOLIWKR e il canon del progetto; `.planning/STATE.md` e ROADMAP factory del luglio 2026 sono **snapshot legacy**, non sostituiscono lo stato corrente di Ristrutturazioni Formia. Evitare modifiche opportunistiche fuori scope.
